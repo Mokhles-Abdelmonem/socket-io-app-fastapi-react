@@ -50,10 +50,21 @@ async def chat(sid, message):
 
 @sio_server.event
 async def handelPlay(sid, nextHistory, currentMove):
-    print(f'{sid}: Played')
+    print(f'{sid}: handelPlay')
     room = sio_server.rooms(sid)
     for number in room:
         contain_str = re.search('[a-zA-Z]', number)
         if not contain_str:
             room_number = number
     await sio_server.emit('handelPlay', {'sid': sid, "nextHistory": nextHistory, "currentMove": currentMove}, str(room_number))
+
+
+@sio_server.event
+async def declare_winner(sid, winner):
+    print(f'{sid}: declare_winner')
+    room = sio_server.rooms(sid)
+    for number in room:
+        contain_str = re.search('[a-zA-Z]', number)
+        if not contain_str:
+            room_number = number
+    await sio_server.emit('declareWinner', {'winner': winner, 'roomNumber':str(room_number)})

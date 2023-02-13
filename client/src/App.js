@@ -7,8 +7,6 @@ function App() {
     <h1>Socket.io app</h1>  
     <Chat />
     </>
-
-
   );
 }
 

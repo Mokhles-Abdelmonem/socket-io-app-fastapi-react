@@ -11,8 +11,11 @@ export const Chat = () => {
   const [isConnected, setIsConnected] = useState(socket.connected);
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
-  const [room, setRoom] = useState('');
-  const [playerturn, setplayerturn] = useState(false);
+  const [thewinner, setthewinner] = useState('');
+  const [playerXturn, setplayerXturn] = useState(false);
+  const [playerX, setplayerX] = useState('');
+  const [playerO, setplayerO] = useState('');
+  const oplayerTurn = !playerXturn
 
 
   const [history, setHistory] = useState([Array(9).fill(null)]);
@@ -26,10 +29,45 @@ export const Chat = () => {
     const CMove = nextHistory.length - 1
     setCurrentMove(CMove);
     socket.emit('handelPlay', nextHistory, CMove);
-
-
   }
-  console.log("playerturn" , playerturn);
+  const squares = currentSquares
+  function handleClick(i) {
+    if (calculateWinner(squares) || squares[i]) {
+      return;
+    }
+    const nextSquares = squares.slice();
+    if (xIsNext) {
+      if (oplayerTurn) {
+        return;
+      }
+      nextSquares[i] = 'X';
+    } else {
+      if (!oplayerTurn) {
+        return;
+      }
+      nextSquares[i] = 'O';
+    }
+    handlePlay(nextSquares);
+    const winner = calculateWinner(nextSquares);
+    if (winner === 'X') {
+      socket.emit('declare_winner', playerX);
+    }
+    if (winner === 'O') {
+      socket.emit('declare_winner', playerO);
+    }
+  }
+
+  let status;
+  const winner = calculateWinner(squares);
+  if (winner) {
+    status = 'Winner: ' + winner;
+  } else { 
+    status = 'Next player: ' + (xIsNext ? 'X' : 'O');
+  }
+
+
+
+
 
 
   useEffect(() => {
@@ -43,7 +81,10 @@ export const Chat = () => {
 
     socket.on('join', (data) => {
       if (data.playerXturn){
-        setplayerturn(data.playerXturn);
+        setplayerXturn(data.playerXturn);
+        setplayerX(data.sid);
+      }else{
+        setplayerO(data.sid);
       }
 
       setMessages((prevMessages) => [...prevMessages, { ...data, type: 'join'}]);
@@ -59,8 +100,10 @@ export const Chat = () => {
     socket.on('handelPlay', (data) => {
       setHistory(data.nextHistory);
       setCurrentMove(data.currentMove);
-      console.log("playerturn" , playerturn);
-      setplayerturn(!playerturn)
+    });
+        
+    socket.on('declareWinner', (data) => {
+      setMessages((prevMessages) => [...prevMessages, { ...data, type: 'winner'}]);
     });
 
   }, []);
@@ -100,7 +143,22 @@ export const Chat = () => {
           >
           <div className="game">
             <div className="game-board">
-              <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay} playerturn={playerturn} />
+            <div className="status">{status}</div>
+              <div className="board-row">
+                <Square value={squares[0]} onSquareClick={() => handleClick(0)} />
+                <Square value={squares[1]} onSquareClick={() => handleClick(1)} />
+                <Square value={squares[2]} onSquareClick={() => handleClick(2)} />
+              </div>
+              <div className="board-row">
+                <Square value={squares[3]} onSquareClick={() => handleClick(3)} />
+                <Square value={squares[4]} onSquareClick={() => handleClick(4)} />
+                <Square value={squares[5]} onSquareClick={() => handleClick(5)} />
+              </div>
+              <div className="board-row">
+                <Square value={squares[6]} onSquareClick={() => handleClick(6)} />
+                <Square value={squares[7]} onSquareClick={() => handleClick(7)} />
+                <Square value={squares[8]} onSquareClick={() => handleClick(8)} />
+              </div>
             </div>
           </div>
 
@@ -139,52 +197,70 @@ function Square({ value, onSquareClick }) {
 }
 
 
-function Board({ xIsNext, squares, onPlay ,playerturn}) {
-  function handleClick(i) {
-    if (calculateWinner(squares) || squares[i]) {
-      return;
-    }
-    if (!playerturn) {
-      return;
-    }
-    const nextSquares = squares.slice();
-    if (xIsNext) {
-      nextSquares[i] = 'X';
-    } else {
-      nextSquares[i] = 'O';
-    }
-    onPlay(nextSquares);
-  }
+// function Board({ xIsNext, squares, onPlay ,oplayerTurn, setWinner, winnerName, playerX, playerO}) {
+//   function handleClick(i) {
+//     if (calculateWinner(squares) || squares[i]) {
+//       return;
+//     }
+//     const nextSquares = squares.slice();
+//     if (xIsNext) {
+//       if (oplayerTurn) {
+//         return;
+//       }
+//       nextSquares[i] = 'X';
+//     } else {
+//       if (!oplayerTurn) {
+//         return;
+//       }
+//       nextSquares[i] = 'O';
+//     }
+//     onPlay(nextSquares);
+//   }
 
-  const winner = calculateWinner(squares);
-  let status;
-  if (winner) {
-    status = 'Winner: ' + winner;
-  } else {
-    status = 'Next player: ' + (xIsNext ? 'X' : 'O');
-  }
+//   let status;
+//   useEffect(() => {
+//   const winner = calculateWinner(squares);
+//   console.log("winner______________");
+//   console.log(winner);
+//   console.log(playerX);
+//   console.log(playerO);
+//   if (winner) {
 
-  return (
-    <>
-      <div className="status">{status}</div>
-      <div className="board-row">
-        <Square value={squares[0]} onSquareClick={() => handleClick(0)} />
-        <Square value={squares[1]} onSquareClick={() => handleClick(1)} />
-        <Square value={squares[2]} onSquareClick={() => handleClick(2)} />
-      </div>
-      <div className="board-row">
-        <Square value={squares[3]} onSquareClick={() => handleClick(3)} />
-        <Square value={squares[4]} onSquareClick={() => handleClick(4)} />
-        <Square value={squares[5]} onSquareClick={() => handleClick(5)} />
-      </div>
-      <div className="board-row">
-        <Square value={squares[6]} onSquareClick={() => handleClick(6)} />
-        <Square value={squares[7]} onSquareClick={() => handleClick(7)} />
-        <Square value={squares[8]} onSquareClick={() => handleClick(8)} />
-      </div>
-    </>
-  );
-}
+//     // if (winner === 'X'){
+//     //   socket.emit('declare_winner', playerX);
+//     // }else{
+//     //   socket.emit('declare_winner', playerO);
+//     // }
+//     status = 'Winner: ' + winner;
+//   } else {
+//     status = 'Next player: ' + (xIsNext ? 'X' : 'O');
+//   }
+
+//     {winner === 'X' ? setWinner(playerX) : setWinner(playerO)}
+
+//   }, []);
+
+//   return (
+//     <>
+//       <div className="status">{status}</div>
+//       <div className="board-row">
+//         <Square value={squares[0]} onSquareClick={() => handleClick(0)} />
+//         <Square value={squares[1]} onSquareClick={() => handleClick(1)} />
+//         <Square value={squares[2]} onSquareClick={() => handleClick(2)} />
+//       </div>
+//       <div className="board-row">
+//         <Square value={squares[3]} onSquareClick={() => handleClick(3)} />
+//         <Square value={squares[4]} onSquareClick={() => handleClick(4)} />
+//         <Square value={squares[5]} onSquareClick={() => handleClick(5)} />
+//       </div>
+//       <div className="board-row">
+//         <Square value={squares[6]} onSquareClick={() => handleClick(6)} />
+//         <Square value={squares[7]} onSquareClick={() => handleClick(7)} />
+//         <Square value={squares[8]} onSquareClick={() => handleClick(8)} />
+//       </div>
+//     </>
+//   );
+// }
 
 
 
@@ -205,11 +281,5 @@ function calculateWinner(squares) {
       return squares[a];
     }
   }
-  return null;
-}
-
-
-function stopPlayedPlayer(player,currentPlayer) {
-
   return null;
 }
