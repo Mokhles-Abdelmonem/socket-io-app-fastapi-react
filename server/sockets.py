@@ -4,6 +4,7 @@ import re
 
 room_number = 1
 room_dict = {}
+players = {}
 
 
 sio_server = socketio.AsyncServer(
@@ -19,6 +20,30 @@ sio_app = socketio.ASGIApp(
 
 @sio_server.event
 async def connect(sid, environ, auth):
+    pass
+    
+
+
+@sio_server.event
+async def add_user(sid, name):
+    global players
+    player_exist = players.get(name)
+    if player_exist:
+        name = name + '_' + sid
+    players['name'] = {
+        "sid" : sid,
+        "bonding" : False,
+        "status" : ''
+    }
+
+    await sio_server.emit('playerJoined', {'player': name, "players":players})
+    
+
+
+
+
+@sio_server.event
+async def connectcopy(sid, environ, auth):
     global room_number
     global room_dict
     room = room_dict.get(str(room_number))

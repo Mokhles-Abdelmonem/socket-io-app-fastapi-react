@@ -11,7 +11,7 @@ export const Chat = () => {
   const [isConnected, setIsConnected] = useState(socket.connected);
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
-  const [thewinner, setthewinner] = useState('');
+  const [username, setUsername] = useState('');
   const [playerXturn, setplayerXturn] = useState(false);
   const [playerX, setplayerX] = useState('');
   const [playerO, setplayerO] = useState('');
@@ -79,7 +79,11 @@ export const Chat = () => {
       setIsConnected(socket.connected);
     });
 
-    socket.on('join', (data) => {
+
+
+
+
+    socket.on('joinCopy', (data) => {
       if (data.playerXturn){
         setplayerXturn(data.playerXturn);
         setplayerX(data.sid);
@@ -110,80 +114,118 @@ export const Chat = () => {
 
   return (
     <>
-        
-      <h2>status: {isConnected ? 'connected' : 'disconnected'}</h2>
-      <div style={{display: 'flex', alignItems: 'center'}}>
-          <div
-            style={{
-              height: '400px',
-              width: '50%',
-              overflowY: 'scroll',
-              border: 'solid black 1px',
-              padding: '10px',
-              marginTop: '15px',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            {messages.map((message, index) => (
-              <Message message={message} key={index} />
-            ))}
-          </div>
-          <div
-            style={{
-              height: '400px',
-              width: '50%',
-              overflowY: 'scroll',
-              border: 'solid black 1px',
-              padding: '10px',
-              marginTop: '15px',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-          <div className="game">
-            <div className="game-board">
-            <div className="status">{status}</div>
-              <div className="board-row">
-                <Square value={squares[0]} onSquareClick={() => handleClick(0)} />
-                <Square value={squares[1]} onSquareClick={() => handleClick(1)} />
-                <Square value={squares[2]} onSquareClick={() => handleClick(2)} />
-              </div>
-              <div className="board-row">
-                <Square value={squares[3]} onSquareClick={() => handleClick(3)} />
-                <Square value={squares[4]} onSquareClick={() => handleClick(4)} />
-                <Square value={squares[5]} onSquareClick={() => handleClick(5)} />
-              </div>
-              <div className="board-row">
-                <Square value={squares[6]} onSquareClick={() => handleClick(6)} />
-                <Square value={squares[7]} onSquareClick={() => handleClick(7)} />
-                <Square value={squares[8]} onSquareClick={() => handleClick(8)} />
-              </div>
-            </div>
-          </div>
 
-          </div>
-      </div>
+      { !username ? (
+      <div>
+
+      <br />
+      <h2>
+        Enter your username:
+      </h2>
+      <br />
       <input
-        type={'text'}
-        id='message'
-        onChange={(event) => {
-          const value = event.target.value.trim();
-          setMessage(value);
-        }}
+              type={'text'}
+              id='username'
       ></input>
       <button
         onClick={() => {
-          if (message && message.length) {
-            socket.emit('chat', message);
-          }
-          var messageBox = document.getElementById('message');
-          messageBox.value = '';
-          setMessage('');
+          const name = document.getElementById('username');
+          setUsername(name);
+          socket.emit('add_user', name);
         }}
       >
-        Send
+        submit
       </button>
+      </div>
+      ):(
+      <div>
+          <h2>status: {isConnected ? 'connected' : 'disconnected'}</h2>
+          <div style={{display: 'flex', alignItems: 'center'}}>
+              <div
+                style={{
+                  height: '400px',
+                  width: '50%',
+                  overflowY: 'scroll',
+                  border: 'solid black 1px',
+                  padding: '10px',
+                  marginTop: '15px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                <div>
+                    <ol>
+                      <ul>test</ul>
+                      <ul>test</ul>
+                      <ul>test</ul>
+                      <ul>test</ul>
+                      <ul>test</ul>
+                      <ul>test</ul>
+                    </ol>
+                </div>
+                <div>
+                  {messages.map((message, index) => (
+                    <Message message={message} key={index} />
+                  ))}
+                </div>
+              </div>
+              <div
+                style={{
+                  height: '400px',
+                  width: '50%',
+                  overflowY: 'scroll',
+                  border: 'solid black 1px',
+                  padding: '10px',
+                  marginTop: '15px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+              <div className="game">
+                <div className="game-board">
+                <div className="status">{status}</div>
+                  <div className="board-row">
+                    <Square value={squares[0]} onSquareClick={() => handleClick(0)} />
+                    <Square value={squares[1]} onSquareClick={() => handleClick(1)} />
+                    <Square value={squares[2]} onSquareClick={() => handleClick(2)} />
+                  </div>
+                  <div className="board-row">
+                    <Square value={squares[3]} onSquareClick={() => handleClick(3)} />
+                    <Square value={squares[4]} onSquareClick={() => handleClick(4)} />
+                    <Square value={squares[5]} onSquareClick={() => handleClick(5)} />
+                  </div>
+                  <div className="board-row">
+                    <Square value={squares[6]} onSquareClick={() => handleClick(6)} />
+                    <Square value={squares[7]} onSquareClick={() => handleClick(7)} />
+                    <Square value={squares[8]} onSquareClick={() => handleClick(8)} />
+                  </div>
+                </div>
+              </div>
+
+              </div>
+          </div>
+          <input
+            type={'text'}
+            id='message'
+            onChange={(event) => {
+              const value = event.target.value.trim();
+              setMessage(value);
+            }}
+          ></input>
+          <button
+            onClick={() => {
+              if (message && message.length) {
+                socket.emit('chat', message);
+              }
+              var messageBox = document.getElementById('message');
+              messageBox.value = '';
+              setMessage('');
+            }}
+          >
+            Send
+          </button>
+      </div>) }
+
     </>
   );
 };
