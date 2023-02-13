@@ -35,8 +35,10 @@ async def add_user(sid, name):
         "bonding" : False,
         "status" : ''
     }
+    print("players")
+    print(players)
 
-    await sio_server.emit('playerJoined', {'player': name, "players":players})
+    await sio_server.emit('playerJoined', {'username': name, "players":players})
     
 
 

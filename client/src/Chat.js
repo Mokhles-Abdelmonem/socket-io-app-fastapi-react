@@ -82,6 +82,13 @@ export const Chat = () => {
 
 
 
+    socket.on('playerJoined', (data) => {
+
+      setMessages((prevMessages) => [...prevMessages, { ...data, type: 'join'}]);
+    });
+
+
+
 
     socket.on('joinCopy', (data) => {
       if (data.playerXturn){
@@ -93,6 +100,7 @@ export const Chat = () => {
 
       setMessages((prevMessages) => [...prevMessages, { ...data, type: 'join'}]);
     });
+
     socket.on('leaved', (data) => {
       setMessages((prevMessages) => [...prevMessages, { ...data, type: 'leaved'}]);
       
@@ -130,7 +138,7 @@ export const Chat = () => {
       <button
         onClick={() => {
           const name = document.getElementById('username');
-          setUsername(name);
+          localStorage.setItem('username', name);
           socket.emit('add_user', name);
         }}
       >
@@ -141,6 +149,25 @@ export const Chat = () => {
       <div>
           <h2>status: {isConnected ? 'connected' : 'disconnected'}</h2>
           <div style={{display: 'flex', alignItems: 'center'}}>
+          <div
+                style={{
+                  height: '400px',
+                  width: '25%',
+                  overflowY: 'scroll',
+                  border: 'solid black 1px',
+                  padding: '10px',
+                  marginTop: '15px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+                >
+                      <ul>players</ul>
+                      <ul>test</ul>
+                      <ul>test</ul>
+                      <ul>test</ul>
+                      <ul>test</ul>
+                      <ul>test</ul>
+                </div>
               <div
                 style={{
                   height: '400px',
@@ -153,16 +180,7 @@ export const Chat = () => {
                   flexDirection: 'column',
                 }}
               >
-                <div>
-                    <ol>
-                      <ul>test</ul>
-                      <ul>test</ul>
-                      <ul>test</ul>
-                      <ul>test</ul>
-                      <ul>test</ul>
-                      <ul>test</ul>
-                    </ol>
-                </div>
+
                 <div>
                   {messages.map((message, index) => (
                     <Message message={message} key={index} />
