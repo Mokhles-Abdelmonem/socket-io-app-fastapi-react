@@ -83,7 +83,8 @@ export const Chat = () => {
 
 
     socket.on('playerJoined', (data) => {
-
+      console.log("playerJoined", data);
+      setUsername(data.username);
       setMessages((prevMessages) => [...prevMessages, { ...data, type: 'join'}]);
     });
 
@@ -120,10 +121,12 @@ export const Chat = () => {
 
   }, []);
 
+  const localName = localStorage.getItem('username');
+
   return (
     <>
 
-      { !username ? (
+      { !localName ? (
       <div>
 
       <br />
@@ -138,8 +141,11 @@ export const Chat = () => {
       <button
         onClick={() => {
           const name = document.getElementById('username');
-          localStorage.setItem('username', name);
-          socket.emit('add_user', name);
+          localStorage.setItem('username', name.value);
+          console.log("on click event",name.value)
+          if (name.value && name.value.length) {
+            socket.emit('add_user', name.value);
+          } 
         }}
       >
         submit

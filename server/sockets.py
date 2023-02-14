@@ -26,17 +26,17 @@ async def connect(sid, environ, auth):
 
 @sio_server.event
 async def add_user(sid, name):
+    print("add user called __________________________") 
     global players
     player_exist = players.get(name)
     if player_exist:
         name = name + '_' + sid
-    players['name'] = {
+    players[name] = {
         "sid" : sid,
         "bonding" : False,
         "status" : ''
     }
     print("players")
-    print(players)
 
     await sio_server.emit('playerJoined', {'username': name, "players":players})
     
