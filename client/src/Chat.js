@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 
 import { Message } from './Message';
+import { Players } from './Players';
 
 const socket = io(process.env.REACT_APP_API_URL, {
   path: process.env.REACT_APP_SOCKET_PATH,
@@ -11,24 +12,27 @@ export const Chat = () => {
   const [isConnected, setIsConnected] = useState(socket.connected);
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
+  const [players, setPlayers] = useState([]);
+  const [player, setPlayer] = useState({});
   const [username, setUsername] = useState('');
-  const [playerXturn, setplayerXturn] = useState(false);
-  const [playerX, setplayerX] = useState('');
-  const [playerO, setplayerO] = useState('');
-  const oplayerTurn = !playerXturn
+  const [refreshed, setRefreshed] = useState('');
 
 
   const [history, setHistory] = useState([Array(9).fill(null)]);
   const [currentMove, setCurrentMove] = useState(0);
   const xIsNext = currentMove % 2 === 0;
   const currentSquares = history[currentMove];
+  
+  
+  const localName = localStorage.getItem('username');
 
   function handlePlay(nextSquares) {
     const nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
+    socket.emit('set_history', localName, nextHistory);
     setHistory(nextHistory);
     const CMove = nextHistory.length - 1
     setCurrentMove(CMove);
-    socket.emit('handelPlay', nextHistory, CMove);
+    socket.emit('handelPlay', player, nextHistory, CMove);
   }
   const squares = currentSquares
   function handleClick(i) {
@@ -36,13 +40,15 @@ export const Chat = () => {
       return;
     }
     const nextSquares = squares.slice();
+
+    
     if (xIsNext) {
-      if (oplayerTurn) {
+      if (player.side === 'O') {
         return;
       }
       nextSquares[i] = 'X';
     } else {
-      if (!oplayerTurn) {
+      if (player.side === 'X') {
         return;
       }
       nextSquares[i] = 'O';
@@ -50,10 +56,10 @@ export const Chat = () => {
     handlePlay(nextSquares);
     const winner = calculateWinner(nextSquares);
     if (winner === 'X') {
-      socket.emit('declare_winner', playerX);
+      socket.emit('declare_winner', player.name);
     }
     if (winner === 'O') {
-      socket.emit('declare_winner', playerO);
+      socket.emit('declare_winner', player.name);
     }
   }
 
@@ -69,7 +75,6 @@ export const Chat = () => {
 
 
 
-
   useEffect(() => {
     socket.on('connect', () => {
       setIsConnected(socket.connected);
@@ -79,38 +84,66 @@ export const Chat = () => {
       setIsConnected(socket.connected);
     });
 
-
-
-
     socket.on('playerJoined', (data) => {
-      console.log("playerJoined", data);
       setUsername(data.username);
       setMessages((prevMessages) => [...prevMessages, { ...data, type: 'join'}]);
+      socket.emit('get_players',data.username ,(result) => {
+        const playersList = result.players;
+        const currentPlayer = result.player;
+        if (playersList.length === 0) {
+          localStorage.removeItem('username');
+        }else{
+          setPlayer(currentPlayer);
+          setPlayers(playersList);
+
+        }
+
+      });
+    });
+
+    socket.emit('get_players', localName,(result) => {
+      const playersList = result.players;
+      const currentPlayer = result.player;
+      if (playersList.length === 0) {
+        localStorage.removeItem('username');
+      }else{
+        setPlayer(currentPlayer);
+        setPlayers(playersList);
+      }
+    });
+
+
+    socket.emit('get_history', localName,(result) => {
+
+      console.log("get gestory result")
+      console.log(result)
+      if (result){
+        setHistory(result);
+      }
     });
 
 
 
+    socket.on('playersJoinedRoom', (data) => {
+        setMessages((prevMessages) => [...prevMessages, { ...data[0], type: 'joinedRoom'}]);
+        setMessages((prevMessages) => [...prevMessages, { ...data[1], type: 'joinedRoom'}]);
+    });
 
-    socket.on('joinCopy', (data) => {
-      if (data.playerXturn){
-        setplayerXturn(data.playerXturn);
-        setplayerX(data.sid);
-      }else{
-        setplayerO(data.sid);
-      }
-
-      setMessages((prevMessages) => [...prevMessages, { ...data, type: 'join'}]);
+    socket.on('refresh', () => {
+      window.location.reload();
     });
 
     socket.on('leaved', (data) => {
       setMessages((prevMessages) => [...prevMessages, { ...data, type: 'leaved'}]);
       
     });
-    socket.on('chat', (data) => {
-      setMessages((prevMessages) => [...prevMessages, { ...data, type: 'chat'}]);
+    socket.on('chat', (messages) => {
+      setMessages(messages);
     });
 
     socket.on('handelPlay', (data) => {
+      console.log("from handel ", data);
+
       setHistory(data.nextHistory);
       setCurrentMove(data.currentMove);
     });
@@ -121,7 +154,6 @@ export const Chat = () => {
 
   }, []);
 
-  const localName = localStorage.getItem('username');
 
   return (
     <>
@@ -142,7 +174,6 @@ export const Chat = () => {
         onClick={() => {
           const name = document.getElementById('username');
           localStorage.setItem('username', name.value);
-          console.log("on click event",name.value)
           if (name.value && name.value.length) {
             socket.emit('add_user', name.value);
           } 
@@ -155,25 +186,34 @@ export const Chat = () => {
       <div>
           <h2>status: {isConnected ? 'connected' : 'disconnected'}</h2>
           <div style={{display: 'flex', alignItems: 'center'}}>
-          <div
-                style={{
-                  height: '400px',
-                  width: '25%',
-                  overflowY: 'scroll',
-                  border: 'solid black 1px',
-                  padding: '10px',
-                  marginTop: '15px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}
-                >
-                      <ul>players</ul>
-                      <ul>test</ul>
-                      <ul>test</ul>
-                      <ul>test</ul>
-                      <ul>test</ul>
-                      <ul>test</ul>
-                </div>
+              {!player.in_room ?(
+                <div
+                  style={{
+                    height: '400px',
+                    width: '25%',
+                    overflowY: 'scroll',
+                    border: 'solid black 1px',
+                    padding: '10px',
+                    marginTop: '15px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                  }}
+                  >
+                    <ul>available players</ul>
+                    {players.map((gamer, index) => (
+                      <Players 
+                      player={gamer} 
+                      socket={socket} 
+                      setPlayers={setPlayers} 
+                      setPlayer={setPlayer}
+                      key={index} />
+                    ))}
+                      
+                  </div>
+              ):
+              (
+                ''
+              )}
               <div
                 style={{
                   height: '400px',
@@ -193,6 +233,9 @@ export const Chat = () => {
                   ))}
                 </div>
               </div>
+              {
+              player.in_room ?
+              (
               <div
                 style={{
                   height: '400px',
@@ -207,26 +250,33 @@ export const Chat = () => {
               >
               <div className="game">
                 <div className="game-board">
-                <div className="status">{status}</div>
-                  <div className="board-row">
-                    <Square value={squares[0]} onSquareClick={() => handleClick(0)} />
-                    <Square value={squares[1]} onSquareClick={() => handleClick(1)} />
-                    <Square value={squares[2]} onSquareClick={() => handleClick(2)} />
-                  </div>
-                  <div className="board-row">
-                    <Square value={squares[3]} onSquareClick={() => handleClick(3)} />
-                    <Square value={squares[4]} onSquareClick={() => handleClick(4)} />
-                    <Square value={squares[5]} onSquareClick={() => handleClick(5)} />
-                  </div>
-                  <div className="board-row">
-                    <Square value={squares[6]} onSquareClick={() => handleClick(6)} />
-                    <Square value={squares[7]} onSquareClick={() => handleClick(7)} />
-                    <Square value={squares[8]} onSquareClick={() => handleClick(8)} />
+                  <div className="status">{status}</div>
+                    <div className="board-row">
+                      <Square value={squares[0]} onSquareClick={() => handleClick(0)} />
+                      <Square value={squares[1]} onSquareClick={() => handleClick(1)} />
+                      <Square value={squares[2]} onSquareClick={() => handleClick(2)} />
+                    </div>
+                    <div className="board-row">
+                      <Square value={squares[3]} onSquareClick={() => handleClick(3)} />
+                      <Square value={squares[4]} onSquareClick={() => handleClick(4)} />
+                      <Square value={squares[5]} onSquareClick={() => handleClick(5)} />
+                    </div>
+                    <div className="board-row">
+                      <Square value={squares[6]} onSquareClick={() => handleClick(6)} />
+                      <Square value={squares[7]} onSquareClick={() => handleClick(7)} />
+                      <Square value={squares[8]} onSquareClick={() => handleClick(8)} />
+                    </div>
                   </div>
                 </div>
-              </div>
 
               </div>
+              ) : (
+              <div>
+
+              </div>
+              )
+              }
+
           </div>
           <input
             type={'text'}
@@ -239,7 +289,11 @@ export const Chat = () => {
           <button
             onClick={() => {
               if (message && message.length) {
-                socket.emit('chat', message);
+                if (player.in_room) {
+                  socket.emit('chat_in_room', localName, message);
+                }else{
+                socket.emit('chat', localName, message);
+                }
               }
               var messageBox = document.getElementById('message');
               messageBox.value = '';
@@ -286,10 +340,6 @@ function Square({ value, onSquareClick }) {
 //   let status;
 //   useEffect(() => {
 //   const winner = calculateWinner(squares);
-//   console.log("winner______________");
-//   console.log(winner);
-//   console.log(playerX);
-//   console.log(playerO);
 //   if (winner) {
 
 //     // if (winner === 'X'){
