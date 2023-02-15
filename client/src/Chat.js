@@ -15,8 +15,7 @@ export const Chat = () => {
   const [players, setPlayers] = useState([]);
   const [player, setPlayer] = useState({});
   const [username, setUsername] = useState('');
-  const [refreshed, setRefreshed] = useState('');
-
+  const [timer, setTimer] = useState('');
 
   const [history, setHistory] = useState([Array(9).fill(null)]);
   const [currentMove, setCurrentMove] = useState(0);
@@ -87,38 +86,51 @@ export const Chat = () => {
     socket.on('playerJoined', (data) => {
       setUsername(data.username);
       setMessages((prevMessages) => [...prevMessages, { ...data, type: 'join'}]);
-      socket.emit('get_players',data.username ,(result) => {
-        const playersList = result.players;
-        const currentPlayer = result.player;
+      socket.emit('get_players' ,(result) => {
+        const playersList = result;
         if (playersList.length === 0) {
           localStorage.removeItem('username');
+          setPlayers([]);
         }else{
-          setPlayer(currentPlayer);
           setPlayers(playersList);
-
         }
 
       });
     });
 
-    socket.emit('get_players', localName,(result) => {
-      const playersList = result.players;
-      const currentPlayer = result.player;
-      if (playersList.length === 0) {
-        localStorage.removeItem('username');
-      }else{
-        setPlayer(currentPlayer);
-        setPlayers(playersList);
-      }
+
+    socket.on('setTimer', (timer) => {
+      setTimer(timer);
     });
+
+
+
+
+
+
+    if (window.performance) {
+      if (performance.navigation.type == 1) {
+        socket.emit('update_player_session', localName,(result) => {
+          const playersList = result.players;
+          const currentPlayer = result.player;
+          if (playersList.length === 0) {
+            localStorage.removeItem('username');
+            setPlayer({});
+            setPlayers([]);
+          }else{
+            setPlayer(currentPlayer);
+            setPlayers(playersList);
+          }
+        });
+      } 
+    }
+
 
 
     socket.emit('get_history', localName,(result) => {
 
-      console.log("get gestory result")
-      console.log(result)
       if (result){
-        setHistory(result);
+        setHistory(Array(result));
       }
     });
 
@@ -129,10 +141,12 @@ export const Chat = () => {
         setMessages((prevMessages) => [...prevMessages, { ...data[1], type: 'joinedRoom'}]);
     });
 
-    socket.on('refresh', () => {
-      window.location.reload();
+    socket.on('setPlayer', (data) => {
+      setPlayer(data)
     });
-
+    socket.on('setPlayers', (data) => {
+      setPlayers(data)
+    });
     socket.on('leaved', (data) => {
       setMessages((prevMessages) => [...prevMessages, { ...data, type: 'leaved'}]);
       
@@ -142,7 +156,6 @@ export const Chat = () => {
     });
 
     socket.on('handelPlay', (data) => {
-      console.log("from handel ", data);
 
       setHistory(data.nextHistory);
       setCurrentMove(data.currentMove);
@@ -155,6 +168,8 @@ export const Chat = () => {
   }, []);
 
 
+  console.log("socket");
+  console.log(socket.active);
   return (
     <>
 
@@ -185,6 +200,41 @@ export const Chat = () => {
       ):(
       <div>
           <h2>status: {isConnected ? 'connected' : 'disconnected'}</h2>
+          <h1>Time:{timer}</h1>
+          {player.in_room ?(
+          <div>
+          <button
+            onClick={() => {
+                  socket.emit('leave_room', localName, (result) => {
+                    setPlayer(result.player);
+                    setHistory([Array(9).fill(null)]);
+                    setCurrentMove(0);
+
+                  });
+              }
+            }
+          >
+            leave room
+          </button>
+          </div>
+          ):(
+          <div>
+          <button
+            onClick={() => {
+                  socket.emit('leave_game', localName);
+                  setPlayer({});
+                  setHistory([Array(9).fill(null)]);
+                  setCurrentMove(0);
+                  localStorage.removeItem('username');
+              }
+            }
+          >
+            leave the game
+          </button>
+          </div>
+          )}
+
+
           <div style={{display: 'flex', alignItems: 'center'}}>
               {!player.in_room ?(
                 <div
@@ -391,11 +441,15 @@ function calculateWinner(squares) {
     [0, 4, 8],
     [2, 4, 6],
   ];
+
+  console.log("squares");
+  console.log(squares);
+  if (squares){
   for (let i = 0; i < lines.length; i++) {
     const [a, b, c] = lines[i];
     if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
       return squares[a];
     }
-  }
+  }}
   return null;
 }
