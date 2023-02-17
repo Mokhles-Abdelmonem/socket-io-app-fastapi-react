@@ -14,8 +14,9 @@ export const Chat = () => {
   const [message, setMessage] = useState('');
   const [players, setPlayers] = useState([]);
   const [player, setPlayer] = useState({});
-  const [username, setUsername] = useState('');
+  const [opponentName, setOpponentName] = useState('');
   const [timer, setTimer] = useState('');
+  const [timeOut, setTimeOut] = useState(false);
 
   const [history, setHistory] = useState([Array(9).fill(null)]);
   const [currentMove, setCurrentMove] = useState(0);
@@ -35,7 +36,7 @@ export const Chat = () => {
   }
   const squares = currentSquares
   function handleClick(i) {
-    if (calculateWinner(squares) || squares[i]) {
+    if (calculateWinner(squares) || squares[i] || timeOut ) {
       return;
     }
     const nextSquares = squares.slice();
@@ -46,11 +47,13 @@ export const Chat = () => {
         return;
       }
       nextSquares[i] = 'X';
+      socket.emit('switch_timer', player.room_number, opponentName, 'O')
     } else {
       if (player.side === 'X') {
         return;
       }
       nextSquares[i] = 'O';
+      socket.emit('switch_timer', player.room_number, opponentName, 'X')
     }
     handlePlay(nextSquares);
     const winner = calculateWinner(nextSquares);
@@ -84,7 +87,6 @@ export const Chat = () => {
     });
 
     socket.on('playerJoined', (data) => {
-      setUsername(data.username);
       setMessages((prevMessages) => [...prevMessages, { ...data, type: 'join'}]);
       socket.emit('get_players' ,(result) => {
         const playersList = result;
@@ -104,9 +106,14 @@ export const Chat = () => {
     });
 
 
+    socket.on('TimeOut', () => {
+      setTimeOut(true);
+    });
 
 
-
+    socket.on('opponentWon', () => {
+      socket.emit('declare_winner', opponentName);
+    });
 
     if (window.performance) {
       if (performance.navigation.type == 1) {
@@ -142,7 +149,8 @@ export const Chat = () => {
     });
 
     socket.on('setPlayer', (data) => {
-      setPlayer(data)
+      setPlayer(data.player)
+      setOpponentName(data.opponent)
     });
     socket.on('setPlayers', (data) => {
       setPlayers(data)
@@ -167,9 +175,6 @@ export const Chat = () => {
 
   }, []);
 
-
-  console.log("socket");
-  console.log(socket.active);
   return (
     <>
 
@@ -254,7 +259,7 @@ export const Chat = () => {
                       <Players 
                       player={gamer} 
                       socket={socket} 
-                      setPlayers={setPlayers} 
+                      setOpponentName={setOpponentName} 
                       setPlayer={setPlayer}
                       key={index} />
                     ))}
@@ -442,8 +447,6 @@ function calculateWinner(squares) {
     [2, 4, 6],
   ];
 
-  console.log("squares");
-  console.log(squares);
   if (squares){
   for (let i = 0; i < lines.length; i++) {
     const [a, b, c] = lines[i];
