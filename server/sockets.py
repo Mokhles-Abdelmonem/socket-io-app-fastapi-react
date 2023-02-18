@@ -14,6 +14,9 @@ messages = []
 history = {}
 clients = []
 timer_switch = {}
+
+
+
 sio_server = socketio.AsyncServer(
     async_mode='asgi',
     cors_allowed_origins=[]
@@ -26,39 +29,60 @@ sio_app = socketio.ASGIApp(
 
 
 
-async def countdown_x(room, playerx):
+async def countdown_x(player_name, room, opponent_name):
+    global players
+    global names_list
     global timer_switch
     timer_switch[room][2] = True
+
     x_time = timer_switch[room][0]
     x_turn = timer_switch[room][2]
-    while x_turn and x_time >= 0:
+    player_won = timer_switch[room][3]
+    while x_turn and x_time >= 0 and not player_won:
+        x_time = timer_switch[room][0]
+        name_index = names_list.index(opponent_name)
+        opponent = players[name_index]
+        name_index = names_list.index(player_name)
+        player = players[name_index]
         mins, secs = divmod(x_time, 60)
         timer = '{:02d}:{:02d}'.format(mins, secs)
-        await sio_server.emit('setTimer', timer, to=playerx)
+        await sio_server.emit('setTimer', timer, to=opponent['sid'])
         await sio_server.sleep(1)
         x_time -= 1
         if x_time < 0:
             await sio_server.emit('TimeOut', to=room)
-            await sio_server.emit('opponentWon', to=playerx)
+            await sio_server.emit('playerWon', player['name'], to=player['sid'])
         timer_switch[room][0] = x_time
         x_turn = timer_switch[room][2]
+        player_won = timer_switch[room][3]
 
-async def countdown_o(room, playero):
+
+
+
+async def countdown_o(player_name, room, opponent_name):
     global timer_switch
     timer_switch[room][2] = False
     o_time = timer_switch[room][1]
     x_turn = timer_switch[room][2]
-    while not x_turn and o_time >= 0:
+    player_won = timer_switch[room][3]
+    while not x_turn and o_time >= 0 and not player_won:
+        o_time = timer_switch[room][1]
+        name_index = names_list.index(opponent_name)
+        opponent = players[name_index]
+        name_index = names_list.index(player_name)
+        player = players[name_index]
         mins, secs = divmod(o_time, 60)
         timer = '{:02d}:{:02d}'.format(mins, secs)
-        await sio_server.emit('setTimer', timer, to=playero)
+        await sio_server.emit('setTimer', timer, to=opponent['sid'])
         await sio_server.sleep(1)
         o_time -= 1
         if o_time < 0:
             await sio_server.emit('TimeOut', to=room)
-            await sio_server.emit('opponentWon', to=playero)
+            await sio_server.emit('playerWon', player['name'],  to=player['sid'])
         timer_switch[room][1] = o_time
         x_turn = timer_switch[room][2]
+        player_won = timer_switch[room][3]
+        
 
 
 
@@ -83,7 +107,7 @@ async def disconnect(sid):
 @sio_server.event
 async def set_history(sid, localName, data):
     global history
-    global player
+    global players
     global names_list
     name_index = names_list.index(localName)
     player = players[name_index]
@@ -96,7 +120,7 @@ async def set_history(sid, localName, data):
 @sio_server.event
 async def get_history(sid, localName):
     global history
-    global player
+    global players
     global names_list
     if localName in names_list:
         name_index = names_list.index(localName)
@@ -135,8 +159,10 @@ async def add_user(sid, name):
 @sio_server.event
 async def update_player_session(sid, localName):
     global players
-    global player
     global names_list
+    global room_dict
+    opponent = None
+    player = {}
     if localName in names_list:
         name_index = names_list.index(localName)
         player = players[name_index]
@@ -144,6 +170,14 @@ async def update_player_session(sid, localName):
         if player['in_room']:
             sio_server.enter_room(sid, player['room_number'])
         players[name_index] = player
+        player_room = player.get('room_number')
+        if player_room :
+            player_list = room_dict.get(player_room)
+            if player_list:
+                for player_name in player_list:
+                    if player_name != localName:
+                        opponent = player_name
+
     pop_list = []
     for index, gamer in enumerate(players):
         if not gamer['sid'] in clients :
@@ -152,10 +186,11 @@ async def update_player_session(sid, localName):
     for index in pop_list:
         names_list.pop(index)
         players.pop(index)
-        
+
+
 
     await sio_server.emit('setPlayers', players)
-    return {"players": players, "player": player}
+    return {"players": players, "player": player, "opponent": opponent}
 
 
 
@@ -181,23 +216,56 @@ import asyncio
 
 
 @sio_server.event
-async def switch_timer(sid, room, opponent_name, side):
+async def switch_timer(sid, room, player_name, opponent_name, side):
+    if side == 'X':
+        sio_server.start_background_task(countdown_x, player_name, room, opponent_name)
+    elif side == 'O':
+        sio_server.start_background_task(countdown_o, player_name, room, opponent_name)
+
+@sio_server.event
+async def set_timer(sid, room, player_name):
+    global timer_switch
+    timer_switch[room] = [15,15,True,False]
+    sio_server.start_background_task(countdown_x, player_name, room, player_name)
+
+
+@sio_server.event
+async def stop_time(sid, room, opponent_name):
     global players
     global names_list
     name_index = names_list.index(opponent_name)
-    opponent = players[name_index]
-    if side == 'X':
-        sio_server.start_background_task(countdown_x,room, opponent['sid'])
-    elif side == 'O':
-        sio_server.start_background_task(countdown_o,room, opponent['sid'])
+    player = players[name_index]
+    global timer_switch
+    timer_switch[room][3] = True
+    await sio_server.emit('stopTimer', to=room)
+
+
 
 @sio_server.event
-async def set_timer(sid, room):
-    global timer_switch
-    timer_switch[room] = [15,15,True]
-    sio_server.start_background_task(countdown_x, room, sid)
+async def game_request(sid,  player_x_name, player_o_name):
+    global players
+    global names_list
+    name_index = names_list.index(player_o_name)
+    player_o = players[name_index]
+    await sio_server.emit('gameRequest', {"player_x_name":player_x_name, "player_o_name":player_o_name}, to=player_o["sid"])
+
+@sio_server.event
+async def decline_request(sid,  player_x_name):
+    global players
+    global names_list
+    name_index = names_list.index(player_x_name)
+    player_x = players[name_index]
+    await sio_server.emit('requestDeclined', to=player_x["sid"])
 
 
+
+@sio_server.event
+async def cancel_request(sid,  player_o_name):
+    global players
+    global names_list
+    name_index = names_list.index(player_o_name)
+    player_o = players[name_index]
+    await sio_server.emit('requestCanceled', to=player_o["sid"])
 
 
 
@@ -219,6 +287,7 @@ async def join_room(sid, playerx, playero):
     global clients
     global names_list
     global players
+    global room_dict
     player_x_index = names_list.index(playerx)
     player_o_index = names_list.index(playero)
     player_x = players[player_x_index]
@@ -237,37 +306,15 @@ async def join_room(sid, playerx, playero):
     player_o['room_number'] = str(room_number)
     players[player_x_index] = player_x
     players[player_o_index] = player_o
-    player_o_sid = player_o['sid']
-    await sio_server.emit('setPlayer', {"player":player_o, "opponent":player_x['name']} ,  to=player_o_sid)
+    player_x_sid = player_x['sid']
+    room_dict[str(room_number)] = [playerx, playero]
+    await sio_server.emit('setPlayer', {"player":player_x, "opponent":player_o['name']} ,  to=player_x_sid)
     await sio_server.emit('setPlayers', players)
     await sio_server.emit('playersJoinedRoomToAll', [player_x, player_o])
     await sio_server.emit('playersJoinedRoom',[player_x, player_o] , str(room_number))
     return [player_x, player_o]
 
-
-    
-
-
-
-
-# @sio_server.event
-# async def connectcopy(sid, environ, auth):
-#     global room_number
-#     global room_dict
-#     room = room_dict.get(str(room_number))
-    
-#     if room :
-#         if len(room) == 1 :
-#             room.append(sid)
-#         room_number += 1
-#         playerXturn = True
-#     else :
-#         room_dict[str(room_number)] = [sid]
-#         playerXturn = False
-
-#     sio_server.enter_room(sid, str(room_number))
-#     await sio_server.emit('join', {'sid': sid, "room": str(room_number), "playerXturn": playerXturn}, str(room_number))
-    
+   
 
 
 @sio_server.event
@@ -342,8 +389,7 @@ async def leave_game(sid, localName):
 
 
 @sio_server.event
-async def handelPlay(sid, player, nextHistory, currentMove):
-    room = player['room_number']
+async def handelPlay(sid, room, nextHistory, currentMove):
     await sio_server.emit('handelPlay', {"nextHistory": nextHistory, "currentMove": currentMove}, to=room)
 
 
@@ -355,3 +401,18 @@ async def declare_winner(sid, winner):
         if not contain_str:
             room_number = number
     await sio_server.emit('declareWinner', {'winner': winner, 'roomNumber':str(room_number)})
+
+
+
+@sio_server.event
+async def rematch_game(sid, player_name):
+    global players
+    global names_list
+    name_index = names_list.index(player_name)
+    player = players[name_index]
+    room = player['room_number']
+    global timer_switch
+    timer_switch[room] = [15,15,True,False]
+    sio_server.start_background_task(countdown_x, player_name, room, player_name)
+
+    await sio_server.emit('rematchGame', to=room)

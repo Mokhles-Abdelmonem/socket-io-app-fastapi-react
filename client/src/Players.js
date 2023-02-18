@@ -1,3 +1,9 @@
+import { confirmAlert } from 'react-confirm-alert'; // Import
+import 'react-confirm-alert/src/react-confirm-alert.css'; // Import css
+
+
+
+
 export const Players = ({ player, socket, setOpponentName, setPlayer }) => {
   const localName = localStorage.getItem('username');
   if (localName !== player.name && player.name !== '' && !player.in_room) {
@@ -9,12 +15,18 @@ export const Players = ({ player, socket, setOpponentName, setPlayer }) => {
         if (event.target){
           socket.emit('check_player', targetPlayer, (exist) => {
             if(exist){
-              socket.emit('join_room', localName, targetPlayer,(result) => {
-                const player_x = result[0];
-                const player_o = result[1];
-                socket.emit('set_timer', player_x.room_number)
-                setPlayer(player_x);
-                setOpponentName(player_o.name);
+              socket.emit('game_request', localName, targetPlayer)
+              confirmAlert({
+                title: 'Confirm game request',
+                message: `Waiting ${targetPlayer} response`,
+                buttons: [
+                  {
+                    label: 'Cancel',
+                    onClick: () => {
+                      socket.emit('cancel_request', targetPlayer);
+                    }
+                  }
+                ]
               });
             };
           });

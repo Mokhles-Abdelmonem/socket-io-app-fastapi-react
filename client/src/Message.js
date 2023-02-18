@@ -1,7 +1,6 @@
 export const Message = ({ message }) => {
   if (message.type === 'join') return <p>{`${message.username} just joined`}</p>;
   if (message.type === 'joinedRoom') {
-    console.log("message", message);
 
     
     return (

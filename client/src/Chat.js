@@ -3,6 +3,12 @@ import { io } from 'socket.io-client';
 
 import { Message } from './Message';
 import { Players } from './Players';
+import { confirmAlert } from 'react-confirm-alert'; // Import
+import 'react-confirm-alert/src/react-confirm-alert.css'; // Import css
+
+
+
+
 
 const socket = io(process.env.REACT_APP_API_URL, {
   path: process.env.REACT_APP_SOCKET_PATH,
@@ -17,6 +23,7 @@ export const Chat = () => {
   const [opponentName, setOpponentName] = useState('');
   const [timer, setTimer] = useState('');
   const [timeOut, setTimeOut] = useState(false);
+  const [playerWon, setPlayerWon] = useState(false);
 
   const [history, setHistory] = useState([Array(9).fill(null)]);
   const [currentMove, setCurrentMove] = useState(0);
@@ -32,36 +39,43 @@ export const Chat = () => {
     setHistory(nextHistory);
     const CMove = nextHistory.length - 1
     setCurrentMove(CMove);
-    socket.emit('handelPlay', player, nextHistory, CMove);
+    socket.emit('handelPlay', player.room_number, nextHistory, CMove);
   }
   const squares = currentSquares
-  function handleClick(i) {
+  function handleClick(i, apiPlayer=false) {
+    
     if (calculateWinner(squares) || squares[i] || timeOut ) {
       return;
     }
     const nextSquares = squares.slice();
+    console.log("nextSquares before", nextSquares)
 
-    
+    var gamer = apiPlayer ? apiPlayer : player ;
+    var opponent = apiPlayer ? apiPlayer.opponent : opponentName ;
+
     if (xIsNext) {
-      if (player.side === 'O') {
+      if (gamer.side === 'O') {
         return;
       }
       nextSquares[i] = 'X';
-      socket.emit('switch_timer', player.room_number, opponentName, 'O')
+      socket.emit('switch_timer', gamer.room_number, gamer.name, opponent, 'O')
     } else {
-      if (player.side === 'X') {
+      if (gamer.side === 'X') {
         return;
       }
       nextSquares[i] = 'O';
-      socket.emit('switch_timer', player.room_number, opponentName, 'X')
+      socket.emit('switch_timer', gamer.room_number, gamer.name, opponent, 'X')
     }
+    console.log("nextSquares before", nextSquares)
     handlePlay(nextSquares);
     const winner = calculateWinner(nextSquares);
     if (winner === 'X') {
-      socket.emit('declare_winner', player.name);
+      socket.emit('declare_winner', gamer.name);
+      socket.emit('stop_time', gamer.room_number, opponent);
     }
     if (winner === 'O') {
-      socket.emit('declare_winner', player.name);
+      socket.emit('declare_winner', gamer.name);
+      socket.emit('stop_time', gamer.room_number, opponent);
     }
   }
 
@@ -105,21 +119,82 @@ export const Chat = () => {
       setTimer(timer);
     });
 
-
     socket.on('TimeOut', () => {
       setTimeOut(true);
+      setPlayerWon(true);
+    });
+
+    socket.on('stopTimer', () => {
+      setTimer('');
+      setTimeOut(false);
+      setPlayerWon(true);
+    });
+
+    socket.on('rematchGame', () => {
+      setPlayerWon(false);
+      setTimeOut(false);
+      setCurrentMove(0);
+      setHistory([Array(9).fill(null)]);
+    });
+
+    socket.on('playerWon', (player_name) => {
+      socket.emit('declare_winner', player_name);
+    });
+
+    socket.on('requestCanceled', (player_name) => {
+      window.location.reload();
+    });
+
+    socket.on('gameRequest', (data) => {
+      confirmAlert({
+        title: 'Confirm game request',
+        message: `${data.player_x_name} Requesting a game with you`,
+        buttons: [
+          {
+            label: 'Yes',
+            onClick: () => {
+              socket.emit('join_room', data.player_x_name, data.player_o_name,(result) => {
+                const player_x = result[0];
+                const player_o = result[1];
+                socket.emit('set_timer', player_x.room_number, player_x.name)
+                setPlayer(player_o);
+                setOpponentName(data.player_x_name);
+              });
+            }
+          },
+          {
+            label: 'No',
+            onClick: () => {
+              socket.emit('decline_request', data.player_x_name);
+            }
+          }
+        ]
+      });
     });
 
 
-    socket.on('opponentWon', () => {
-      socket.emit('declare_winner', opponentName);
+    socket.on('requestDeclined', () => {
+      confirmAlert({
+        title: 'Declined game request',
+        message: `Game request declined`,
+        buttons: [
+          {
+            label: 'Ok',
+            onClick: () => {
+            }
+          }
+        ]
+      });
     });
 
     if (window.performance) {
-      if (performance.navigation.type == 1) {
+      if (performance.navigation.type === 1) {
         socket.emit('update_player_session', localName,(result) => {
           const playersList = result.players;
           const currentPlayer = result.player;
+          const opponent = result.opponent;
+
+          
           if (playersList.length === 0) {
             localStorage.removeItem('username');
             setPlayer({});
@@ -127,6 +202,7 @@ export const Chat = () => {
           }else{
             setPlayer(currentPlayer);
             setPlayers(playersList);
+            setOpponentName(opponent);
           }
         });
       } 
@@ -149,6 +225,7 @@ export const Chat = () => {
     });
 
     socket.on('setPlayer', (data) => {
+      window.location.reload();
       setPlayer(data.player)
       setOpponentName(data.opponent)
     });
@@ -168,12 +245,18 @@ export const Chat = () => {
       setHistory(data.nextHistory);
       setCurrentMove(data.currentMove);
     });
+
+    socket.on('handleMove', (data) => {
+      setPlayer(data.player)
+      handleClick(data.move, data.player);
+
+    });
         
     socket.on('declareWinner', (data) => {
       setMessages((prevMessages) => [...prevMessages, { ...data, type: 'winner'}]);
     });
 
-  }, []);
+  }, [localName]);
 
   return (
     <>
@@ -205,7 +288,7 @@ export const Chat = () => {
       ):(
       <div>
           <h2>status: {isConnected ? 'connected' : 'disconnected'}</h2>
-          <h1>Time:{timer}</h1>
+          <h1>Time:{timer ? timer: '00:15'}</h1>
           {player.in_room ?(
           <div>
           <button
@@ -221,6 +304,22 @@ export const Chat = () => {
           >
             leave room
           </button>
+          {playerWon ? (
+          <div>
+          <button
+            onClick={() => {
+              if (player.side === 'X'){
+                socket.emit('rematch_game', localName);
+              }else if (player.side === 'O'){
+                socket.emit('rematch_game', opponentName);
+              }
+            }
+          }
+          >
+            rematch
+          </button>
+          </div>
+          ):('')}
           </div>
           ):(
           <div>
@@ -371,67 +470,6 @@ function Square({ value, onSquareClick }) {
   );
 }
 
-
-// function Board({ xIsNext, squares, onPlay ,oplayerTurn, setWinner, winnerName, playerX, playerO}) {
-//   function handleClick(i) {
-//     if (calculateWinner(squares) || squares[i]) {
-//       return;
-//     }
-//     const nextSquares = squares.slice();
-//     if (xIsNext) {
-//       if (oplayerTurn) {
-//         return;
-//       }
-//       nextSquares[i] = 'X';
-//     } else {
-//       if (!oplayerTurn) {
-//         return;
-//       }
-//       nextSquares[i] = 'O';
-//     }
-//     onPlay(nextSquares);
-//   }
-
-//   let status;
-//   useEffect(() => {
-//   const winner = calculateWinner(squares);
-//   if (winner) {
-
-//     // if (winner === 'X'){
-//     //   socket.emit('declare_winner', playerX);
-//     // }else{
-//     //   socket.emit('declare_winner', playerO);
-//     // }
-//     status = 'Winner: ' + winner;
-//   } else {
-//     status = 'Next player: ' + (xIsNext ? 'X' : 'O');
-//   }
-
-//     {winner === 'X' ? setWinner(playerX) : setWinner(playerO)}
-
-//   }, []);
-
-//   return (
-//     <>
-//       <div className="status">{status}</div>
-//       <div className="board-row">
-//         <Square value={squares[0]} onSquareClick={() => handleClick(0)} />
-//         <Square value={squares[1]} onSquareClick={() => handleClick(1)} />
-//         <Square value={squares[2]} onSquareClick={() => handleClick(2)} />
-//       </div>
-//       <div className="board-row">
-//         <Square value={squares[3]} onSquareClick={() => handleClick(3)} />
-//         <Square value={squares[4]} onSquareClick={() => handleClick(4)} />
-//         <Square value={squares[5]} onSquareClick={() => handleClick(5)} />
-//       </div>
-//       <div className="board-row">
-//         <Square value={squares[6]} onSquareClick={() => handleClick(6)} />
-//         <Square value={squares[7]} onSquareClick={() => handleClick(7)} />
-//         <Square value={squares[8]} onSquareClick={() => handleClick(8)} />
-//       </div>
-//     </>
-//   );
-// }
 
 
 
