@@ -43,15 +43,20 @@ export const Chat = () => {
   }
   const squares = currentSquares
   function handleClick(i, apiPlayer=false) {
+
+    var roomHistory = apiPlayer ? apiPlayer.room_hestory : [] ;
+    var apiSquares = apiPlayer? roomHistory[currentMove] : squares;
+
     
-    if (calculateWinner(squares) || squares[i] || timeOut ) {
+    if (calculateWinner(apiSquares) || apiSquares[i] || timeOut ) {
       return;
     }
-    const nextSquares = squares.slice();
+    const nextSquares = apiSquares.slice();
     console.log("nextSquares before", nextSquares)
 
     var gamer = apiPlayer ? apiPlayer : player ;
     var opponent = apiPlayer ? apiPlayer.opponent : opponentName ;
+
 
     if (xIsNext) {
       if (gamer.side === 'O') {
