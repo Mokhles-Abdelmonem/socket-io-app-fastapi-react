@@ -6,20 +6,22 @@ from pydantic import BaseModel
 from typing import Union
 import requests
 import asyncio
+from fastapi.responses import JSONResponse
 
 
 from datetime import datetime, timedelta
 
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
-from forms import RegisterForm
+from serializer import RegisterJson, LoginJson
 import re
 from schema import ResponseModel
 from database import user_helper
-
+from fastapi_jwt_auth import AuthJWT
+from fastapi_jwt_auth.exceptions import AuthJWTException
 import motor.motor_asyncio 
 
 MONGO_DETAILS = "mongodb://localhost:27017"
@@ -31,6 +33,37 @@ database = client.MokhlesGame
 users_collection = database.get_collection("users")
 
 app = FastAPI()
+
+
+class Settings(BaseModel):
+    authjwt_secret_key: str = "secret"
+
+@AuthJWT.load_config
+def get_config():
+    return Settings()
+
+@app.exception_handler(AuthJWTException)
+def authjwt_exception_handler(request: Request, exc: AuthJWTException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.message}
+    )
+
+origins = [
+    "http://localhost",
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+
 
 
 @app.get('/')
@@ -87,8 +120,11 @@ fake_users_db = {
 
 class Token(BaseModel):
     access_token: str
-    token_type: str
+    refresh_token: str
 
+class TokenForm(BaseModel):
+    access_token: str
+    token_type: str
 
 class TokenData(BaseModel):
     username: Union[str, None] = None
@@ -182,24 +218,20 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
     return encoded_jwt
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+
+async def get_current_user(Authorize: AuthJWT = Depends()):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-        token_data = TokenData(username=username)
-    except JWTError:
-        raise credentials_exception
-    user = await get_user( username=token_data.username)
+    Authorize.jwt_required()
+    current_user = Authorize.get_jwt_subject()
+    user = await get_user(username=current_user)
     if user is None:
         raise credentials_exception
     return user
+
 
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)):
@@ -208,7 +240,8 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
     return current_user
 
 
-@app.post("/token/", response_model=Token)
+
+@app.post("/token", response_model=TokenForm)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     user = await authenticate_user(form_data.username, form_data.password)
     if not user:
@@ -223,34 +256,61 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+@app.post("/login/", response_model=Token)
+async def login_for_access_token(json_data: LoginJson, Authorize: AuthJWT = Depends()):
+    user = await authenticate_user(json_data.username, json_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token = Authorize.create_access_token(subject=user['username'])
+    refresh_token = Authorize.create_refresh_token(subject=user['username'])
+    return {"access_token": access_token, "refresh_token": refresh_token}
 
-@app.post("/register", response_model=UserInDB)
-async def user_register(form_data: RegisterForm):
-    print("form_data")
-    print(form_data)
 
-    user_exist = await users_collection.find_one({"username": form_data.username})
+
+
+@app.post('/refresh')
+def refresh(Authorize: AuthJWT = Depends()):
+    """
+    The jwt_refresh_token_required() function insures a valid refresh
+    token is present in the request before running any code below that function.
+    we can use the get_jwt_subject() function to get the subject of the refresh
+    token, and use the create_access_token() function again to make a new access token
+    """
+    Authorize.jwt_refresh_token_required()
+
+    current_user = Authorize.get_jwt_subject()
+    new_access_token = Authorize.create_access_token(subject=current_user)
+    return {"access_token": new_access_token}
+
+
+@app.post("/register/", response_model=UserInDB)
+async def user_register(json_data: RegisterJson):
+    print("json_data")
+    print(json_data)
+
+    user_exist = await users_collection.find_one({"username": json_data.username})
     if user_exist:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="username allready exist",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    if not email_valid(form_data.email):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Invalid email address",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    if not password_valid(form_data.password):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Invalid password address enter at least 8 characters contain at least 1 number ,1 letter uppercase , 1 letter lowercase, 1 special character",
+        return JSONResponse(
+        status_code=409,
+        content={"username": f"username allready exist"},
+    )
 
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    if not email_valid(json_data.email):
+        return JSONResponse(
+        status_code=501,
+        content={"email": "Invalid email address"},
+    )
+    if not password_valid(json_data.password):
+        return JSONResponse(
+        status_code=400,
+        content={"password": "Invalid password address enter at least 8 characters contain at least 1 number ,1 letter uppercase , 1 letter lowercase, 1 special character"},
+    )
 
-    user_valid = await validate_user(form_data.username, form_data.email,form_data.password)
+    user_valid = await validate_user(json_data.username, json_data.email,json_data.password)
     user = await users_collection.insert_one(user_valid)
     new_user = await users_collection.find_one({"_id": user.inserted_id})
 
@@ -274,7 +334,6 @@ async def read_users(current_user: User = Depends(get_current_active_user)):
 @app.get("/users/me/", response_model=User)
 async def read_users_me(current_user: User = Depends(get_current_active_user)):
     return current_user
-
 
 @app.get("/users/me/items/")
 async def read_own_items(current_user: User = Depends(get_current_active_user)):

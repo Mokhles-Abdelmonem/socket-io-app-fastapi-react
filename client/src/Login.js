@@ -20,19 +20,9 @@ import { TextField } from 'formik-mui';
 import Alert from '@mui/material/Alert';
 import { loginSchema } from './schemas';
 
-
-function Copyright(props) {
-  return (
-    <Typography variant="body2" color="text.secondary" align="center" {...props}>
-      {'Copyright © '}
-      <Link color="inherit" href="https://mui.com/">
-        Your Website
-      </Link>{' '}
-      {new Date().getFullYear()}
-      {'.'}
-    </Typography>
-  );
-}
+import { useSelector, useDispatch } from 'react-redux';
+import { useHistory } from "react-router-dom";
+import { login, reset_register_success } from './api/login'
 
 const theme = createTheme();
 
@@ -41,18 +31,28 @@ const theme = createTheme();
 
 export default function SignIn() {
 
-  
+  let history = useHistory();
+  const dispatch = useDispatch();
+  const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
 
   useEffect(() => {
-
-  }, []);
+    if (dispatch && dispatch !== null && dispatch !== undefined)
+        dispatch(reset_register_success());
+  }, [dispatch]);
+  const [alertData, setAlertData] = useState("");
 
   const onSubmit = async (values, actions) => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
     actions.resetForm();
+    if (dispatch && dispatch !== null && dispatch !== undefined)
+    setAlertData("")
+    dispatch(login(values.username, values.password))
+    .then((res) => setAlertData(res.detail));
 
   };
-  
+
+  if (typeof window !== 'undefined' && isAuthenticated)
+  history.push('/');
 
   return (
     <ThemeProvider theme={theme}>
@@ -73,26 +73,26 @@ export default function SignIn() {
               Sign in
             </Typography>
               <Formik
-                initialValues={{ email: "", password: "" }}
+                initialValues={{ username: "", password: "" }}
                 validationSchema={loginSchema}
                 onSubmit={onSubmit}
               >
                     {({ isSubmitting }) => (
                 <Form>
-                {
-                
+                  {
+                  alertData &&
                   <Alert severity="error">
-                    {}
+                    {alertData}
                   </Alert>
                   }
                 <Field
                   component={TextField}
-                  type="email"
+                  type="username"
                   margin="normal"
                   fullWidth
-                  id="email"
-                  label="Email Address"
-                  name="email"
+                  id="username"
+                  label="username"
+                  name="username"
                   autoFocus
                 />
                 <Field
@@ -133,7 +133,6 @@ export default function SignIn() {
                 )}
               </Formik>
           </Box>
-          <Copyright sx={{ mt: 8, mb: 4 }} />
         </Container>
     </ThemeProvider>
   );

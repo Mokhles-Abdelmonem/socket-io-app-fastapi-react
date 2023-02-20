@@ -12,6 +12,8 @@ import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import CircularProgress from '@mui/material/CircularProgress';
+import { useSelector, useDispatch } from 'react-redux';
+import { useHistory } from "react-router-dom";
 
 import { useState } from 'react';
 
@@ -26,30 +28,21 @@ import { register } from './api/register';
 
 
 
-function Copyright(props) {
-  return (
-    <Typography variant="body2" color="text.secondary" align="center" {...props}>
-      {'Copyright © '}
-      <Link color="inherit" href="https://mui.com/">
-        Your Website
-      </Link>{' '}
-      {new Date().getFullYear()}
-      {'.'}
-    </Typography>
-  );
-}
-
 const theme = createTheme();
 
 export default function SignUp() {
+  let history = useHistory();
+  const dispatch = useDispatch();
+  const register_success = useSelector(state => state.auth.register_success);
+  const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
+  const loading = useSelector(state => state.auth.loading);
 
 
 
   const initialState = {
     username: '',
     email: '',
-    password1: '',
-    password2: '',
+    password: '',
     detail: '',
   };
 
@@ -58,8 +51,7 @@ export default function SignUp() {
   const {
       username,
       email,
-      password1,
-      password2,
+      password,
       detail,
   } = alertData;
 
@@ -68,11 +60,18 @@ export default function SignUp() {
     await new Promise((resolve) => setTimeout(resolve, 1000));
     actions.resetForm(); 
     setAlertData({...initialState})
-    const res = await register(values.username, values.email, values.password1)
-    console.log("res from main", res)
-  }
 
-  if (typeof window !== 'undefined')
+    if (dispatch && dispatch !== null && dispatch !== undefined)
+    dispatch(register(values.username, values.email, values.password1))
+    .then((res) => setAlertData(alertData =>({...alertData,...res,})
+    ));
+    
+  }
+  if (typeof window !== 'undefined' && isAuthenticated)
+  history.push('/home');
+  if (register_success)
+  history.push('/login');
+
   return (
     <ThemeProvider theme={theme}>
         <Container component="main" maxWidth="xs">
@@ -157,10 +156,10 @@ export default function SignUp() {
                     />
                   </Grid>
                   {
-                    password1 &&
+                    password &&
                   <Grid item xs={12}>
                   <Alert severity="error">
-                    {password1}
+                    {password}
                   </Alert>
                   </Grid>
                   }
@@ -176,14 +175,6 @@ export default function SignUp() {
                       autoComplete="re-password"
                     />
                   </Grid>
-                  {
-                    password2 &&
-                  <Grid item xs={12}>
-                  <Alert severity="error">
-                    {password2}
-                  </Alert>
-                  </Grid>
-                  }
                   <Grid item xs={12}>
                     <FormControlLabel
                       control={<Checkbox value="allowExtraEmails" color="primary" />}
@@ -217,7 +208,6 @@ export default function SignUp() {
                 )}
               </Formik>
           </Box>
-          <Copyright sx={{ mt: 5 }} />
         </Container>
     </ThemeProvider>
   );

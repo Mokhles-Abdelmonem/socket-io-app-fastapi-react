@@ -1,4 +1,6 @@
+import * as React from 'react';
 import { Chat } from './Chat';
+import { Provider } from 'react-redux'
 import {
   BrowserRouter as Router,
   Switch,
@@ -7,25 +9,38 @@ import {
 } from "react-router-dom";
 import Login from './Login';
 import Register from './Register';
+import Layout from './layout/Layout';
+import useStore from './store';
+import Game from './TicTacToeGame';
+import JoinButton from './components/socket/JoinButton';
 
 
-function App() {
+export default function App(pageProps) {
+  const store = useStore(pageProps.initialReduxState);
+  const LayoutComponent =  Layout;
   return (
+    <Provider store={store}>
     <Router>
       <Switch>
-          <Route path="/login">
-            <Login/>
-          </Route>
-          <Route path="/register">
-            <Register/>
-          </Route>
-          <Route path="/">
-            <h1>Socket.io app</h1>  
-            <Chat />
-          </Route>
-      </Switch> 
-    </Router>
+        <Route path="/login">
+          <Login/>
+        </Route>
+        <Route path="/register">
+          <Register/>
+        </Route>
+        <Route path="/">
+          <LayoutComponent> 
+            <JoinButton />
+          </LayoutComponent>
+        </Route>
+        <Route path="/tictactoe">
+          <LayoutComponent> 
+            <Game />
+          </LayoutComponent>
+        </Route>
+    </Switch> 
+  </Router>
+  </Provider>
+
   );
 }
-
-export default App;

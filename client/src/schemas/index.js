@@ -19,7 +19,10 @@ export const basicSchema = yup.object().shape({
 
 export const loginSchema = yup.object().shape({
 
-  email: yup.string().email("Please enter a valid email").required("Required"),
+  username: yup
+    .string()
+    .min(3, "first name must be at least 3 characters long")
+    .required("Required"),
   password: yup
     .string()
     .min(5)

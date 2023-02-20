@@ -4,28 +4,31 @@ import {
     SET_AUTH_LOADING,
     REMOVE_AUTH_LOADING,
 } from './types';
-const API_URL = process.env.REACT_APP_API_URL;
-
+import { API_URL } from '../../config/index';
 
 
 
 export const register = (
-    username,
     email,
-    password
+    first_name,
+    last_name,
+    password1,
+    password2
 ) => async dispatch => {
     const body = JSON.stringify({
-        username,
         email,
-        password
+        first_name,
+        last_name,
+        password1,
+        password2
     });
+
     dispatch({
         type: SET_AUTH_LOADING
     });
 
-    try {    
-
-        const apiRes = await fetch(`${API_URL}/register/`, {
+    try {
+        const apiRes = await fetch(`${API_URL}/user/registration/`, {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
@@ -33,7 +36,7 @@ export const register = (
             },
             body: body
         });
-        if (apiRes.status === 200) {
+        if (apiRes.status === 201) {
             dispatch({
                 type: REGISTER_SUCCESS
             });
@@ -41,9 +44,9 @@ export const register = (
             dispatch({
                 type: REGISTER_FAIL
             });
-            const res = await apiRes.json();
-            return res
         }
+        const res = await apiRes.json();
+        return res
     } catch(err) {
         dispatch({
             type: REGISTER_FAIL
