@@ -56,7 +56,7 @@ function Header() {
           noWrap
           sx={{ flex: 1 }}
         >
-          Welcom
+          Welcom to TicTacToe Game
         </Typography>
         {isAuthenticated ? settingsLinks : authLinks}
 

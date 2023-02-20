@@ -1,34 +1,45 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
-import List from '@mui/material/List';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import CssBaseline from '@mui/material/CssBaseline';
+import Container from '@mui/material/Container';
+import Button from '@mui/material/Button';
+import SendIcon from '@mui/icons-material/Send';
 import { useHistory } from "react-router-dom";
 import { useEffect, useState } from 'react';
-  
-export default function joinButton(store) {
-  const handleClick = (event) => {
-    console.log(event.target);
+import { io } from 'socket.io-client';
 
+
+const socket = io(process.env.REACT_APP_API_URL, {
+  path: process.env.REACT_APP_SOCKET_PATH,
+});
+
+export default function joinButton() {
+  const accessToken = localStorage.getItem('accessToken');
+  const handleClick = (event) => {
+    socket.emit('add_user', accessToken);
   };
     return (
-      <Box sx={{ width: '100%', hight: 360, bgcolor: 'background.paper' }}>
-      <List component="nav" aria-label="main mailbox folders">
-        <ListItemButton
-          display="flex"
-          alignItems="center"
-          justify="center"
-          onClick={(event) => handleClick(event)}
-        >
-          <ListItemIcon>
-            <PersonOutlineIcon />
-          </ListItemIcon>
-          <ListItemText primary="Account" />
-        </ListItemButton>
-      </List>
-    </Box>
+      <Container component="main" maxWidth="xs">
+      <CssBaseline />
+      <Box
+        sx={{
+          marginTop: 8,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
+      <Button 
+      variant="contained"
+      size="large"
+      endIcon={<SendIcon />}
+      onClick={(event) => handleClick(event)}
+      >
+        Join
+      </Button>
+      </Box>
+    </Container>
+
   
     );
   }

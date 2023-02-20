@@ -3,7 +3,7 @@ import re
 import time
   
 # define the countdown func.
-
+from utiles import get_current_active_user, User , Depends, AuthJWT
 
 room_number = 0
 room_dict = {}
@@ -134,25 +134,26 @@ async def get_history(sid, localName):
 
 
 @sio_server.event
-async def add_user(sid, name):
+async def add_user(sid, token):
     global players
     global names_list
-    
-    if name in names_list:
-        name = name + '_' + sid
-    names_list.append(name)
-    players.append({
-        "name": name,
-        "sid" : sid,
-        "in_room" : False,
-        "room_number" : None,
-        "side" : '',
-        "status" : ''
-    })
-    sio_server.enter_room(sid, "general_room")
-
-
-    await sio_server.emit('playerJoined', {'sid': sid, 'username': name, "players":players}, to='general_room')
+    Authorize = AuthJWT()
+    current_user = Authorize.get_jwt_subject()
+    print("______________user_______________")
+    print(current_user)
+    # if name in names_list:
+    #     name = name + '_' + sid
+    # names_list.append(name)
+    # players.append({
+    #     "name": name,
+    #     "sid" : sid,
+    #     "in_room" : False,
+    #     "room_number" : None,
+    #     "side" : '',
+    #     "status" : ''
+    # })
+    # sio_server.enter_room(sid, "general_room")
+    # await sio_server.emit('playerJoined', {'sid': sid, 'username': name, "players":players}, to='general_room')
 
     
 
