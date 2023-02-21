@@ -4,7 +4,6 @@ import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
 import { SnackbarContent } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import PLayersDrawer from './components/settingSectoins/Drawer';
@@ -16,14 +15,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   LOAD_USER_SUCCESS,
 } from './api/types';
-import Board from './components/socket/Board';
 
 
 
 const socket = io(process.env.REACT_APP_API_URL, {
   path: process.env.REACT_APP_SOCKET_PATH,
 });
-export default function Game() {
+export default function GeneralRoom() {
   const [messages, setMessages] = useState([]);
   const [players, setPlayers] = useState([]);
   const [isConnected, setIsConnected] = useState(socket.connected);
@@ -51,7 +49,31 @@ export default function Game() {
 
 
 
+
+
+
+
+
+
   useEffect(() => {
+    socket.on('connect', () => {
+      setIsConnected(socket.connected);
+    });
+
+    socket.on('disconnect', () => {
+      setIsConnected(socket.connected);
+    });
+
+
+    socket.on('playerJoined', (data) => {
+      console.log("data", data);
+      setMessages((prevMessages) => [...prevMessages, { ...data, type: 'join'}]);
+        const playersList = data.players;
+        setPlayers(playersList);
+    });
+    socket.on('setPlayers', (data) => {
+      setPlayers(data)
+    });
 
     if (user){
   
@@ -63,7 +85,6 @@ export default function Game() {
         });
         const opponent = result.opponent;
       });
-      
     }
 
   }, []);
@@ -72,38 +93,13 @@ export default function Game() {
   return (
     <div>
       <Grid container spacing={2} columns={16}>
-      <Grid item xs={16}>
-              <Paper
-                sx={{
-                  p: 2,
-                  margin: 'auto',
-                  maxWidth: 500,
-                  flexGrow: 1,
-                }}
-                elevation={24}
-              >
-
-              <Container maxWidth="sm">
-
-                <Box sx={{ bgcolor: '#e3f2fd', minHeight: '10vh' }}>
-                <Grid
-                  container
-                  spacing={0}
-                  direction="column"
-                  alignItems="center"
-                  justifyContent="center"
-                >
-
-                  <Typography variant="h5" gutterBottom>
-                          Time
-                  </Typography>
-                  
-                </Grid>
-                </Box>
-              </Container>
-            </Paper>
+          <Grid item xs={4}>
+            <PLayersDrawer
+              allPlayers={players}   
+              currentPlayer={user}   
+            />
           </Grid>
-          <Grid item xs={16}>
+          <Grid item xs={12}>
               <Paper
                 sx={{
                   p: 2,
@@ -115,10 +111,23 @@ export default function Game() {
               >
 
               <Container maxWidth="sm">
-                <Box sx={{ height: '57vh' }}>
-                  <div className='game'>
-                    <Board/>
-                  </div>
+                <Button 
+                variant="outlined"
+                color="error"
+                onClick={leaveAction}
+                >
+                  leave
+                </Button>
+                <Box sx={{ bgcolor: '#e3f2fd', height: '93vh' }}>
+                <Stack spacing={2} sx={{ maxWidth: 600 }}>
+                    {messages.map((message, index) => (
+                        <SnackbarContent 
+                        sx={{ bgcolor: '#42a5f5' }}
+                        message={<Message message={message} key={index} />}
+                        />
+                      ))}
+
+                  </Stack>
                 </Box>
 
               </Container>

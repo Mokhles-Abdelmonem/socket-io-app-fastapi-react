@@ -39,6 +39,7 @@ class User(BaseModel):
     username: str
     email: Union[str, None] = None
     disabled: Union[bool, None] = None
+    joined: Union[bool, None]
 
 
 class UserInDB(User):

@@ -7,36 +7,24 @@ import ListItemText from '@mui/material/ListItemText';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import { useHistory } from "react-router-dom";
 import { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 
-export default function PLayersDrawer({socket}) {
+
+export default function PLayersDrawer({allPlayers, currentPlayer}) {
+  const [players, setPlayers] = useState([]);
+
   const [selectedPlayer, setSelectedPlayer] = React.useState("account");
-  let history = useHistory();
-
+  
+  const avPlayers = allPlayers.filter(function(e){ 
+    return e.username != currentPlayer.username; 
+  });
   const handleListItemClick = (event) => {
     setSelectedPlayer(event.target);
-    console.log(event.target);
+
+    
 
   };
-
-
-
-
-  
   useEffect(() => {
-    // socket.on('playerJoined', (data) => {
-    //   setMessages((prevMessages) => [...prevMessages, { ...data, type: 'join'}]);
-    //   socket.emit('get_players' ,(result) => {
-    //     const playersList = result;
-    //     if (playersList.length === 0) {
-    //       localStorage.removeItem('username');
-    //       setPlayers([]);
-    //     }else{
-    //       setPlayers(playersList);
-    //     }
-
-    //   });
-    // });
-
 
 
     
@@ -46,15 +34,17 @@ export default function PLayersDrawer({socket}) {
   return (
     <Box sx={{ width: '100%', hight: 360, maxWidth: 360, bgcolor: 'background.paper' }}>
       <List component="nav" aria-label="main mailbox folders">
-        <ListItemButton
-          selected={selectedPlayer === "account"}
-          onClick={(event) => handleListItemClick(event)}
-        >
-          <ListItemIcon>
-            <PersonOutlineIcon />
-          </ListItemIcon>
-          <ListItemText primary="Account" />
-        </ListItemButton>
+        {avPlayers.map((gamer, index) => (
+          <ListItemButton
+            key={index}
+            onClick={(event) => handleListItemClick(event)}
+          >
+            <ListItemIcon>
+              <PersonOutlineIcon />
+            </ListItemIcon>
+            <ListItemText primary={gamer.username}/>
+          </ListItemButton>
+        ))}
       </List>
     </Box>
   );

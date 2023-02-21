@@ -12,6 +12,7 @@ def user_helper(user) -> dict:
         "username": user["username"],
         "email": user["email"],
         "hashed_password": user["hashed_password"],
+        "joined": user["joined"],
     }
 
 

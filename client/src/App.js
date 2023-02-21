@@ -13,6 +13,7 @@ import Layout from './layout/Layout';
 import useStore from './store';
 import Game from './TicTacToeGame';
 import JoinButton from './components/socket/JoinButton';
+import GeneralRoom from './GeneralRoom';
 
 
 export default function App(pageProps) {
@@ -28,14 +29,19 @@ export default function App(pageProps) {
         <Route path="/register">
           <Register/>
         </Route>
-        <Route path="/">
+        <Route path="/dashboard">
           <LayoutComponent> 
-            <JoinButton />
+            <GeneralRoom />
           </LayoutComponent>
         </Route>
         <Route path="/tictactoe">
           <LayoutComponent> 
             <Game />
+          </LayoutComponent>
+        </Route>
+        <Route path="/">
+          <LayoutComponent> 
+            <JoinButton />
           </LayoutComponent>
         </Route>
     </Switch> 

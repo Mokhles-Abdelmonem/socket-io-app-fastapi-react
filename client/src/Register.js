@@ -68,7 +68,7 @@ export default function SignUp() {
     
   }
   if (typeof window !== 'undefined' && isAuthenticated)
-  history.push('/home');
+  history.push('/');
   if (register_success)
   history.push('/login');
 

@@ -3,7 +3,7 @@ import re
 import time
   
 # define the countdown func.
-from utiles import get_current_active_user, User , Depends, AuthJWT
+from utiles import get_current_active_user, User , Depends, AuthJWT, users_collection
 
 room_number = 0
 room_dict = {}
@@ -134,27 +134,26 @@ async def get_history(sid, localName):
 
 
 @sio_server.event
-async def add_user(sid, token):
+async def add_user(sid, user):
     global players
     global names_list
-    Authorize = AuthJWT()
-    current_user = Authorize.get_jwt_subject()
-    print("______________user_______________")
-    print(current_user)
-    # if name in names_list:
-    #     name = name + '_' + sid
-    # names_list.append(name)
-    # players.append({
-    #     "name": name,
-    #     "sid" : sid,
-    #     "in_room" : False,
-    #     "room_number" : None,
-    #     "side" : '',
-    #     "status" : ''
-    # })
-    # sio_server.enter_room(sid, "general_room")
-    # await sio_server.emit('playerJoined', {'sid': sid, 'username': name, "players":players}, to='general_room')
+    name = user['username']
+    user['joined'] = True
+    names_list.append(name)
+    players.append({
+        "username": name,
+        "sid" : sid,
+        "joined" : True,
+        "in_room" : False,
+        "room_number" : None,
+        "side" : '',
+        "status" : ''
+    })
 
+    users_collection.update_one({"username" : name}, {"$set" : {"joined" : True}})
+    sio_server.enter_room(sid, "general_room")
+    await sio_server.emit('playerJoined', {'sid': sid, 'username': name, "players":players,} , to="general_room")
+    return user
     
 
 @sio_server.event
@@ -164,12 +163,15 @@ async def update_player_session(sid, localName):
     global room_dict
     opponent = None
     player = {}
+
     if localName in names_list:
         name_index = names_list.index(localName)
         player = players[name_index]
         player['sid'] = sid
         if player['in_room']:
             sio_server.enter_room(sid, player['room_number'])
+        else:
+            sio_server.enter_room(sid,"general_room")
         players[name_index] = player
         player_room = player.get('room_number')
         if player_room :
@@ -178,6 +180,8 @@ async def update_player_session(sid, localName):
                 for player_name in player_list:
                     if player_name != localName:
                         opponent = player_name
+    else:
+        users_collection.update_one({"username" : localName}, {"$set" : {"joined" : False}})
 
     pop_list = []
     for index, gamer in enumerate(players):
@@ -187,11 +191,8 @@ async def update_player_session(sid, localName):
     for index in pop_list:
         names_list.pop(index)
         players.pop(index)
-
-
-
     await sio_server.emit('setPlayers', players)
-    return {"players": players, "player": player, "opponent": opponent}
+    return {"player": player, "opponent": opponent}
 
 
 
@@ -376,15 +377,18 @@ async def leave_room(sid, localName):
 
 
 @sio_server.event
-async def leave_game(sid, localName):
+async def leave_game(sid, user):
     global names_list
     global players
     global room_number
-    name_index = names_list.index(localName)
+    name = user['username']
+    name_index = names_list.index(name)
     names_list.pop(name_index)
     players.pop(name_index)
+    users_collection.update_one({"username" : name}, {"$set" : {"joined" : False}})
     await sio_server.emit('setPlayers', players)
-
+    user['joined'] = False
+    return user
 
 
 
