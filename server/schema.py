@@ -13,6 +13,11 @@ def user_helper(user) -> dict:
         "email": user["email"],
         "hashed_password": user["hashed_password"],
         "joined": user["joined"],
+        "in_room": user["in_room"],
+        "room_number": user["room_number"],
+        "sid": user["sid"],
+        "side": user["side"],
+        "status": user["status"],
     }
 
 

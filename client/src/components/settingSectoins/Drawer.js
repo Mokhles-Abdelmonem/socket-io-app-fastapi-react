@@ -8,25 +8,43 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import { useHistory } from "react-router-dom";
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { confirmAlert } from 'react-confirm-alert'; // Import
 
 
-export default function PLayersDrawer({allPlayers, currentPlayer}) {
-  const [players, setPlayers] = useState([]);
+export default function PLayersDrawer({allPlayers, currentPlayer, socket}) {
 
-  const [selectedPlayer, setSelectedPlayer] = React.useState("account");
   
   const avPlayers = allPlayers.filter(function(e){ 
-    return e.username != currentPlayer.username; 
+    return e.username != currentPlayer.username && !e.in_room; 
   });
   const handleListItemClick = (event) => {
-    setSelectedPlayer(event.target);
+    const targetPlayer = event.target.innerHTML;
+    if (event.target){
+      socket.emit('check_player', targetPlayer, (exist) => {
+        if(exist){
+          socket.emit('game_request', currentPlayer.username , targetPlayer)
+          confirmAlert({
+            title: 'Confirm game request',
+            message: `Waiting ${targetPlayer} response`,
+            buttons: [
+              {
+                label: 'Cancel',
+                onClick: () => {
+                  socket.emit('cancel_request', targetPlayer);
+                }
+              }
+            ]
+          });
+        };
+      });
+
+    }
 
     
 
   };
   useEffect(() => {
-
-
+    
     
   }, []);
 
@@ -42,7 +60,10 @@ export default function PLayersDrawer({allPlayers, currentPlayer}) {
             <ListItemIcon>
               <PersonOutlineIcon />
             </ListItemIcon>
-            <ListItemText primary={gamer.username}/>
+            <ListItemText 
+            primary={gamer.username}
+            id={`player_${gamer.username}`}
+            />
           </ListItemButton>
         ))}
       </List>

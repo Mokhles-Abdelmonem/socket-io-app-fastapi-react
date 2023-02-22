@@ -30,7 +30,7 @@ export default function JoinButton() {
     })
   };
   if (user){
-    if (user.joined) history.push('/tictactoe');
+    if (user.joined) history.push('/dashboard');
   }
   return (
     <Container component="main" maxWidth="xs">

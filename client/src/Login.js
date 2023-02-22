@@ -56,7 +56,19 @@ export default function SignIn() {
 
   return (
     <ThemeProvider theme={theme}>
-        <Container component="main" maxWidth="xs">
+        <Box
+          sx={{
+            marginTop: 8,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            borderColor: 'error.main',
+            borderRadius: '16px',
+          }}
+          >
+        <Container component="main" maxWidth="xs"
+        sx={{borderColor: 'error.main',}}
+        >
           <CssBaseline />
           <Box
             sx={{
@@ -134,6 +146,7 @@ export default function SignIn() {
               </Formik>
           </Box>
         </Container>
+        </Box>
     </ThemeProvider>
   );
 }

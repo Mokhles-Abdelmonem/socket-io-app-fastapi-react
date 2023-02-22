@@ -51,7 +51,7 @@ async def countdown_x(player_name, room, opponent_name):
         x_time -= 1
         if x_time < 0:
             await sio_server.emit('TimeOut', to=room)
-            await sio_server.emit('playerWon', player['name'], to=player['sid'])
+            await sio_server.emit('playerWon', player['username'], to=player['sid'])
         timer_switch[room][0] = x_time
         x_turn = timer_switch[room][2]
         player_won = timer_switch[room][3]
@@ -78,7 +78,7 @@ async def countdown_o(player_name, room, opponent_name):
         o_time -= 1
         if o_time < 0:
             await sio_server.emit('TimeOut', to=room)
-            await sio_server.emit('playerWon', player['name'],  to=player['sid'])
+            await sio_server.emit('playerWon', player['username'],  to=player['sid'])
         timer_switch[room][1] = o_time
         x_turn = timer_switch[room][2]
         player_won = timer_switch[room][3]
@@ -132,25 +132,30 @@ async def get_history(sid, localName):
             return lasthisory
 
 
+@sio_server.event
+async def get_messages(sid, localName):
+    global messages 
+    return messages
+
 
 @sio_server.event
 async def add_user(sid, user):
     global players
     global names_list
-    name = user['username']
-    user['joined'] = True
-    names_list.append(name)
-    players.append({
-        "username": name,
+    player_obj = {
         "sid" : sid,
         "joined" : True,
         "in_room" : False,
         "room_number" : None,
         "side" : '',
         "status" : ''
-    })
+    }
+    user.update(player_obj)
+    name = user['username']
+    names_list.append(name)
+    players.append(user)
 
-    users_collection.update_one({"username" : name}, {"$set" : {"joined" : True}})
+    users_collection.update_one({"username" : name}, {"$set" : player_obj})
     sio_server.enter_room(sid, "general_room")
     await sio_server.emit('playerJoined', {'sid': sid, 'username': name, "players":players,} , to="general_room")
     return user
@@ -180,6 +185,7 @@ async def update_player_session(sid, localName):
                 for player_name in player_list:
                     if player_name != localName:
                         opponent = player_name
+        users_collection.update_one({"username" : localName}, {"$set" : player})
     else:
         users_collection.update_one({"username" : localName}, {"$set" : {"joined" : False}})
 
@@ -192,7 +198,7 @@ async def update_player_session(sid, localName):
         names_list.pop(index)
         players.pop(index)
     await sio_server.emit('setPlayers', players)
-    return {"player": player, "opponent": opponent}
+    return {"player": player, "players": players, "opponent": opponent}
 
 
 
@@ -310,10 +316,11 @@ async def join_room(sid, playerx, playero):
     players[player_o_index] = player_o
     player_x_sid = player_x['sid']
     room_dict[str(room_number)] = [playerx, playero]
-    await sio_server.emit('setPlayer', {"player":player_x, "opponent":player_o['name']} ,  to=player_x_sid)
+    print( [player_x, player_o])
+    await sio_server.emit('setPlayer', {"player":player_x, "opponent":player_o['username']} ,  to=player_x_sid)
     await sio_server.emit('setPlayers', players)
-    await sio_server.emit('playersJoinedRoomToAll', [player_x, player_o])
     await sio_server.emit('playersJoinedRoom',[player_x, player_o] , str(room_number))
+    await sio_server.emit('pushToRoom', to=str(room_number))
     return [player_x, player_o]
 
    
@@ -357,11 +364,12 @@ async def chat_in_room(sid, localName, message):
 
 
 @sio_server.event
-async def leave_room(sid, localName):
+async def leave_room(sid, user):
     global names_list
     global players
     global room_number
-    name_index = names_list.index(localName)
+    username = user['username']
+    name_index = names_list.index(username)
     player = players[name_index]
     room = player['room_number']
     sid = player['sid']
@@ -371,7 +379,7 @@ async def leave_room(sid, localName):
     player['side'] = ''
     player['room_number'] = None
     players[name_index] = player
-
+    users_collection.update_one({"username" : username}, {"$set" : player})
     await sio_server.emit('setPlayers', players)
     return {"player": player, "history":[None for i in range(9)]}
 
@@ -382,9 +390,10 @@ async def leave_game(sid, user):
     global players
     global room_number
     name = user['username']
-    name_index = names_list.index(name)
-    names_list.pop(name_index)
-    players.pop(name_index)
+    if name in names_list:
+        name_index = names_list.index(name)
+        names_list.pop(name_index)
+        players.pop(name_index)
     users_collection.update_one({"username" : name}, {"$set" : {"joined" : False}})
     await sio_server.emit('setPlayers', players)
     user['joined'] = False

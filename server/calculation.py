@@ -23,7 +23,8 @@ initial_list = [None for i in range(9)]
 
 def submit_move(move):
     global initial_list
-    xIsNext = move % 2 == 0
+    counter = initial_list.count(None)
+    xIsNext = counter % 2 == 0
     if xIsNext:
         initial_list[move] = "O"
     else :

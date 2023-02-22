@@ -41,7 +41,7 @@ def get_password_hash(password):
 async def retrieve_user(username: str):
     user = await users_collection.find_one({"username":username})
     if user:
-        return user_helper(user)
+        return user
 
 async def get_user(username: str):
     user_dict = await retrieve_user(username)
@@ -128,5 +128,5 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
 async def retrieve_users():
     users = []
     async for user in users_collection.find():
-        users.append(user_helper(user))
+        users.append(user)
     return users
