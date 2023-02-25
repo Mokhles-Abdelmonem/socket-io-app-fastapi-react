@@ -37,7 +37,7 @@ submit_move(4)
 submit_move(3)
 submit_move(7)
 
-print(initial_list)
+print(int(3 / 3))
 
 
 if __name__ == '__main__':
