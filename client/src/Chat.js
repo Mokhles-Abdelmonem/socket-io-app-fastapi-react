@@ -216,7 +216,6 @@ export const Chat = () => {
 
 
     socket.emit('get_history', localName,(result) => {
-
       if (result){
         setHistory(Array(result));
       }

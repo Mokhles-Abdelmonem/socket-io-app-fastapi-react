@@ -11,7 +11,7 @@ import { io } from 'socket.io-client';
 import { Message } from './components/socket/Message';
 import { useHistory } from "react-router-dom";
 import { useDispatch, useSelector } from 'react-redux';
-import { confirmAlert } from 'react-confirm-alert'; // Import
+import { confirmAlert } from 'react-confirm-alert';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
@@ -78,7 +78,6 @@ export default function GeneralRoom() {
 
 
     socket.on('playerJoined', (data) => {
-      console.log("data", data);
       setMessages((prevMessages) => [...prevMessages, { ...data, type: 'join'}]);
         const playersList = data.players;
         setPlayers(playersList);
@@ -87,7 +86,6 @@ export default function GeneralRoom() {
       setPlayers(data)
     });
     socket.on('pushToRoom', () => {
-      console.log("pushToRoompushToRoompushToRoompushToRoom");
       history.push('/tictactoe');
     });
 
@@ -103,9 +101,7 @@ export default function GeneralRoom() {
         });
         setOpponentName(opponent);
         setPlayers(playersList);
-        console.log("result", result);
       });
-      console.log("user", user);
       socket.emit('get_messages', user.username ,(result) => {
 
         if (result){

@@ -14,6 +14,7 @@ import { useHistory } from "react-router-dom";
 import { useDispatch, useSelector } from 'react-redux';
 import useWindowSize from "@rooks/use-window-size"
 import Confetti from 'react-confetti'
+import { confirmAlert } from 'react-confirm-alert';
 
 
 
@@ -23,6 +24,7 @@ import {
   LOAD_USER_SUCCESS,
 } from './api/types';
 import Board from './components/socket/Board';
+import Chat from './components/socket/Chat';
 
 
 
@@ -69,9 +71,11 @@ export default function Game() {
   
   function handlePlay(nextSquares) {
     const nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
-    socket.emit('set_history', user.username, nextHistory);
-    setHistory(nextHistory);
     const CMove = nextHistory.length - 1
+    socket.emit('set_history', user.username, nextHistory, CMove);
+    console.log("nextHistory")
+    console.log(nextHistory)
+    setHistory(nextHistory);
     setCurrentMove(CMove);
     socket.emit('handelPlay', user.room_number, nextHistory, CMove);
   }
@@ -86,10 +90,14 @@ export default function Game() {
       return;
     }
     const nextSquares = apiSquares.slice();
-    console.log("nextSquares before", nextSquares)
+    // console.log("WORK AFTER HANDELL CLICK");
+
 
     var gamer = apiPlayer ? apiPlayer : user ;
     var opponent = apiPlayer ? apiPlayer.opponent : opponentName ;
+
+    // console.log("xIsNext", xIsNext);
+    // console.log("gamer.side", gamer.side);
 
 
     if (xIsNext) {
@@ -105,18 +113,15 @@ export default function Game() {
       nextSquares[i] = 'O';
       socket.emit('switch_timer', gamer.room_number, gamer.username, opponent, 'X')
     }
-    console.log("nextSquares before", nextSquares)
     handlePlay(nextSquares);
     const winner = calculateWinner(nextSquares);
     if (winner === 'X') {
-      socket.emit('declare_winner', gamer.username);
+      socket.emit('declare_winner', gamer.username, opponent);
       socket.emit('stop_time', gamer.room_number, opponent);
-      setPlayerWon(true);
     }
     if (winner === 'O') {
-      socket.emit('declare_winner', gamer.username);
+      socket.emit('declare_winner', gamer.username, opponent);
       socket.emit('stop_time', gamer.room_number, opponent);
-      setPlayerWon(true);
     }
   }
 
@@ -147,9 +152,15 @@ export default function Game() {
         setOpponentName(opponent);
       });
       socket.emit('get_history', user.username ,(result) => {
-
+        
         if (result){
-          setHistory(Array(result));
+          const lHistory = result[0];
+          const move = result[1];
+          console.log("lastHistory", lHistory);
+          console.log("Array(lHistory)", Array(lHistory));
+          console.log("move",move);
+          setHistory(lHistory);
+          setCurrentMove(move);
         }
       });
       if (!user.in_room) {
@@ -164,24 +175,21 @@ export default function Game() {
 
     socket.on('TimeOut', () => {
       setTimeOut(true);
-      setPlayerWon(true);
     });
 
     socket.on('stopTimer', () => {
       setTimer('');
       setTimeOut(false);
-      setPlayerWon(true);
     });
 
     socket.on('rematchGame', () => {
-      setPlayerWon(false);
       setTimeOut(false);
       setBoard([Array(9).fill(null)]);
     });
 
-    socket.on('playerWon', (player_name) => {
-      socket.emit('declare_winner', player_name);
-      
+    socket.on('playerWon', (data) => {
+      socket.emit('declare_winner', data.player_name, data.opponent_name);
+
     });
 
     socket.on('handelPlay', (data) => {
@@ -190,6 +198,23 @@ export default function Game() {
       setCurrentMove(data.currentMove);
     });
 
+    socket.on('congrateWinner', () => {
+      setPlayerWon(true);
+    });
+
+    socket.on('noteOpponent', () => {
+      confirmAlert({
+        title: 'Sorry you Lost',
+        message: `your can win next time`,
+        buttons: [
+          {
+            label: 'Ok',
+            onClick: () => {
+            }
+          }
+        ]
+      });
+    });
 
     
 
@@ -204,8 +229,15 @@ export default function Game() {
       height={outerHeight}
       />
     ):('')}
-      <Grid container spacing={2} columns={16}>
-      <Grid item xs={16}>
+    <Box sx={{ width: '100%' }}>
+      <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
+        <Grid item xs={6} md={4}>
+          <Chat
+          socket={socket}
+          />
+        </Grid>
+        <Grid item xs={6} md={8}>
+        <Grid item xs={16}>
               <Paper
                 sx={{
                   p: 2,
@@ -234,6 +266,8 @@ export default function Game() {
             </Paper>
           </Grid>
           <Grid item xs={16}>
+          <Grid item xs={16}>
+
               <Paper
                 sx={{
                   p: 2,
@@ -263,8 +297,8 @@ export default function Game() {
                 </Box>
               </Container>
             </Paper>
-          </Grid>
-          <Grid item xs={16}>
+            </Grid>
+            <Grid item xs={16}>
               <Paper
                 sx={{
                   p: 2,
@@ -288,7 +322,11 @@ export default function Game() {
               </Container>
             </Paper>
           </Grid>
+          </Grid>
+
+        </Grid>
       </Grid>
+    </Box>
     </div>
   );
 }
@@ -333,5 +371,4 @@ const countNull = (array) => {
       counter++
     }
   }
-  console.log("counter", counter)
 };

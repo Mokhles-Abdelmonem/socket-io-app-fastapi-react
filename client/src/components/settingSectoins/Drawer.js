@@ -5,9 +5,7 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
-import { useHistory } from "react-router-dom";
-import { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useEffect } from 'react';
 import { confirmAlert } from 'react-confirm-alert'; // Import
 
 
@@ -15,10 +13,11 @@ export default function PLayersDrawer({allPlayers, currentPlayer, socket}) {
 
   
   const avPlayers = allPlayers.filter(function(e){ 
-    return e.username != currentPlayer.username && !e.in_room; 
+    return e.username !== currentPlayer.username && !e.in_room; 
   });
-  const handleListItemClick = (event) => {
-    const targetPlayer = event.target.innerHTML;
+  const handleListItemClick = (event, playerId) => {
+    const parent = document.getElementById(playerId);
+    const targetPlayer = parent.getElementsByTagName('span')[0].innerHTML;
     if (event.target){
       socket.emit('check_player', targetPlayer, (exist) => {
         if(exist){
@@ -55,7 +54,7 @@ export default function PLayersDrawer({allPlayers, currentPlayer, socket}) {
         {avPlayers.map((gamer, index) => (
           <ListItemButton
             key={index}
-            onClick={(event) => handleListItemClick(event)}
+            onClick={(event) => handleListItemClick(event, `player_${gamer.username}`)}
           >
             <ListItemIcon>
               <PersonOutlineIcon />
