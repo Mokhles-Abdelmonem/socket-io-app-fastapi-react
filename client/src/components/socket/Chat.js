@@ -19,7 +19,10 @@ export default function Chat({socket}) {
   const [messages, setMessages] = useState([]);
   const user = useSelector(state => state.auth.user);
   const [message, setMessage] = useState('');
-  const userLevel = 'level' in user ? user.level : null;
+  const [Level, setLevel] = useState(0);
+  var userLevel = 0 
+
+
   useEffect(() => {
     if (user) {
     socket.emit('get_chat_messages', user.username ,(result) => {
@@ -27,8 +30,11 @@ export default function Chat({socket}) {
         setMessages(result);
       }
     });
-  }
 
+    
+    setLevel(user.level)
+    console.log(userLevel)
+  }
     
     socket.on('chatInRoom', (messages) => {
       setMessages(messages);
@@ -54,7 +60,7 @@ export default function Chat({socket}) {
 
 
               <Box sx={{ display: 'flex', alignItems: 'flex-end' }}>
-              {userLevel && userLevel > 1 ? 
+              {Level > 1 ? 
               (
                 <form>
                 <AccountCircle sx={{ color: 'action.active', mr: 1, my: 0.5 }} />

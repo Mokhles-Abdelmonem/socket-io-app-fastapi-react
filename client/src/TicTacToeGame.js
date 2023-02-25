@@ -73,8 +73,6 @@ export default function Game() {
     const nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
     const CMove = nextHistory.length - 1
     socket.emit('set_history', user.username, nextHistory, CMove);
-    console.log("nextHistory")
-    console.log(nextHistory)
     setHistory(nextHistory);
     setCurrentMove(CMove);
     socket.emit('handelPlay', user.room_number, nextHistory, CMove);
@@ -90,14 +88,10 @@ export default function Game() {
       return;
     }
     const nextSquares = apiSquares.slice();
-    // console.log("WORK AFTER HANDELL CLICK");
 
 
     var gamer = apiPlayer ? apiPlayer : user ;
     var opponent = apiPlayer ? apiPlayer.opponent : opponentName ;
-
-    // console.log("xIsNext", xIsNext);
-    // console.log("gamer.side", gamer.side);
 
 
     if (xIsNext) {
@@ -156,9 +150,6 @@ export default function Game() {
         if (result){
           const lHistory = result[0];
           const move = result[1];
-          console.log("lastHistory", lHistory);
-          console.log("Array(lHistory)", Array(lHistory));
-          console.log("move",move);
           setHistory(lHistory);
           setCurrentMove(move);
         }

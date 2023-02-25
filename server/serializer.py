@@ -45,7 +45,8 @@ class User(BaseModel):
     sid: Union[str, None] = None
     side: Union[str, None] = None
     status: Union[str, None] = None
-
+    level: Union[int, None] = None
+    win_number: Union[int, None] = None
 
 class UserInDB(User):
     hashed_password: str
