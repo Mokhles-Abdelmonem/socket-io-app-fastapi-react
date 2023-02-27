@@ -413,19 +413,12 @@ async def player_left_in_game(sid, opponent_name):
         player['win_number'] = 1
         player['level'] = 1
     room = player['room_number']
-    timer_switch[room][3] = True
+    room_in_timer = timer_switch.get(room)
+    if room_in_timer:
+        room_in_timer[3] = True
     await sio_server.emit('declareWinner', {'winner': opponent_name, 'roomNumber':room})
-    sid = player['sid']
-    sio_server.leave_room(sid, room)
-    sio_server.enter_room(sid, 'general_room')
-    player['in_room'] = False
-    player['side'] = ''
-    player['room_number'] = None
-    players[name_index] = player
-    users_collection.update_one({"username" : opponent_name}, {"$set" : player})
     await sio_server.emit('congrateWinner', to=player['sid'])
     await sio_server.emit('noteOpponentWon', player, to=player['sid'])
-    await sio_server.emit('setPlayers', players)
 
 
 
@@ -435,6 +428,16 @@ async def player_left_room(sid, opponent_name):
     global players
     global room_number
     name_index = names_list.index(opponent_name)
+    opponent = players[name_index]
+    await sio_server.emit('notePlayerLeft', to=opponent['sid'])
+
+
+@sio_server.event
+async def leave_other_player(sid, player_name):
+    global names_list
+    global players
+    global room_number
+    name_index = names_list.index(player_name)
     player = players[name_index]
     room = player['room_number']
     sid = player['sid']
@@ -444,11 +447,14 @@ async def player_left_room(sid, opponent_name):
     player['side'] = ''
     player['room_number'] = None
     players[name_index] = player
-    users_collection.update_one({"username" : opponent_name}, {"$set" : player})
-    await sio_server.emit('notePlayerLeft', {"players":players, "player":player}, to=player['sid'])
+    users_collection.update_one({"username" : player_name}, {"$set" : player})
+    await sio_server.emit('setPlayers', players)
+    return player
 
 
-
+@sio_server.event
+async def set_players(sid, players):
+    await sio_server.emit('setPlayers', players)
 
 @sio_server.event
 async def leave_game(sid, user):
@@ -498,6 +504,15 @@ async def declare_winner(sid, winner, opponent_name):
     await sio_server.emit('declareWinner', {'winner': winner, 'roomNumber':str(room_number)})
     await sio_server.emit('congrateWinner', to=player['sid'])
     await sio_server.emit('noteOpponent', to=opponent['sid'])
+
+
+@sio_server.event
+async def declare_draw(sid, player_name):
+    global players
+    global names_list
+    name_index = names_list.index(player_name)
+    player = players[name_index]
+    await sio_server.emit('declareDraw', to=player['room_number'])
 
 
 

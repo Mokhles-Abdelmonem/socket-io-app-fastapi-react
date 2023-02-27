@@ -50,7 +50,6 @@ export default function Game() {
 
 
   const user = useSelector(state => state.auth.user);
-  const gamer = user
   let browserHistory = useHistory();
   const dispatch = useDispatch();
   const { innerWidth, innerHeight, outerHeight, outerWidth } = useWindowSize();
@@ -153,15 +152,13 @@ export default function Game() {
       socket.emit('declare_winner', gamer.username, opponent);
       socket.emit('stop_time', gamer.room_number, opponent);
     }
+    if (winner === 'tie') {
+      socket.emit('declare_draw', gamer.username);
+      socket.emit('stop_time', gamer.room_number, opponent);
+    }
   }
 
-  let status;
-  const winner = calculateWinner(squares);
-  if (winner) {
-    status = 'Winner: ' + winner;
-  } else { 
-    status = 'Next player: ' + (xIsNext ? 'X' : 'O');
-  }
+
 
 
 
@@ -246,6 +243,20 @@ export default function Game() {
         ]
       });
     });
+    socket.on('declareDraw', () => {
+      setPlayerLost(true);
+      confirmAlert({
+        title: 'Tie ',
+        message: `the game settled to draw, your can win next time`,
+        buttons: [
+          {
+            label: 'Ok',
+            onClick: () => {
+            }
+          }
+        ]
+      });
+    });
 
 
     socket.on('noteOpponentWon', (player) => {
@@ -257,26 +268,30 @@ export default function Game() {
           {
             label: 'Ok',
             onClick: () => {
+              socket.emit('leave_other_player', user.username, (player) => {
                 dispatch({
                   type: LOAD_USER_SUCCESS,
                   payload: {user: player}
                 });
                 browserHistory.push('/dashboard');
+              });
             }
           }
         ],
         onClickOutside: () => {
-          dispatch({
-            type: LOAD_USER_SUCCESS,
-            payload: {user: player}
+          socket.emit('leave_other_player', user.username, (player) => {
+            dispatch({
+              type: LOAD_USER_SUCCESS,
+              payload: {user: player}
+            });
+            browserHistory.push('/dashboard');
           });
-          browserHistory.push('/dashboard');
         },
       });
     });
 
 
-    socket.on('notePlayerLeft', (data) => {
+    socket.on('notePlayerLeft', () => {
       confirmAlert({
         title: 'your opponent left the game',
         message: `the room is empty now, you will be redirected to home page`,
@@ -284,20 +299,24 @@ export default function Game() {
           {
             label: 'Ok',
             onClick: () => {
+              socket.emit('leave_other_player', user.username, (player) => {
                 dispatch({
                   type: LOAD_USER_SUCCESS,
                   payload: {user: player}
                 });
                 browserHistory.push('/dashboard');
+              });
             }
           }
         ],
         onClickOutside: () => {
-          dispatch({
-            type: LOAD_USER_SUCCESS,
-            payload: {user: player}
+          socket.emit('leave_other_player', user.username, (player) => {
+            dispatch({
+              type: LOAD_USER_SUCCESS,
+              payload: {user: player}
+            });
+            browserHistory.push('/dashboard');
           });
-          browserHistory.push('/dashboard');
         },
       });
     });
@@ -459,6 +478,11 @@ function calculateWinner(squares) {
       return squares[a];
     }
   }}
+  var nulls = countNull(squares);
+  console.log(nulls);
+  if (nulls === 0){
+    return 'tie';
+  }
   return null;
 }
 
@@ -467,8 +491,9 @@ function calculateWinner(squares) {
 const countNull = (array) => {
   let counter = 0 
   for (let i = 0; i < array.length; i++) {
-    if (array[i] ===undefined){
+    if (array[i] === null ){
       counter++
     }
   }
+  return counter
 };
