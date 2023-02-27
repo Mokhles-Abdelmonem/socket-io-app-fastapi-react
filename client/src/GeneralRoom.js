@@ -44,19 +44,16 @@ export default function GeneralRoom() {
 
 
   const leaveAction  = () => {
-
-    if (user) {
-
-    socket.emit('leave_game', user, (result) => {
-      dispatch({
-        type: LOAD_USER_SUCCESS,
-        payload: {user: result}
+      if (user) {
+      socket.emit('leave_game', user, (result) => {
+        dispatch({
+          type: LOAD_USER_SUCCESS,
+          payload: {user: result}
+        });
+        history.push('/');
+        const opponent = result.opponent;
       });
-      history.push('/');
-      const opponent = result.opponent;
-    });
-
-  }
+    }
   }
 
 
@@ -161,7 +158,10 @@ export default function GeneralRoom() {
               socket.emit('set_timer', player_x.room_number, player_x.username)
             }
           }
-        ]
+        ],
+        onClickOutside: () => {
+          socket.emit('set_timer', player_x.room_number, player_x.username)
+        },
       });
     });
     socket.on('setPlayers', (data) => {

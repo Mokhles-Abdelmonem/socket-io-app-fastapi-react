@@ -41,7 +41,7 @@ export default function Game() {
   const [timeOut, setTimeOut] = useState(false);
   
   const [playerWon, setPlayerWon] = useState(false);
-  const [board, setBoard] = useState([Array(9).fill(null)]);
+  const [playerLost, setPlayerLost] = useState(false);
 
   const [history, setHistory] = useState([Array(9).fill(null)]);
   const [currentMove, setCurrentMove] = useState(0);
@@ -57,15 +57,51 @@ export default function Game() {
 
   const leaveAction  = () => {
       if (user) {
-        socket.emit('leave_room', user, (result) => {
-          dispatch({
-            type: LOAD_USER_SUCCESS,
-            payload: {user: result.player}
+        if (playerWon || playerLost){
+          socket.emit('player_left_room', opponentName);
+          socket.emit('leave_room', user, (result) => {
+            dispatch({
+              type: LOAD_USER_SUCCESS,
+              payload: {user: result.player}
+            });
+            browserHistory.push('/dashboard');
           });
-          browserHistory.push('/dashboard');
-        });
+        }else{
+          confirmAlert({
+            title: 'Attention , you are in the middle of a game',
+            message: `leaving the game will consider loss`,
+            buttons: [
+              {
+                label: 'leave',
+                onClick: () => {
+                  socket.emit('player_left_in_game', opponentName);
+                  socket.emit('leave_room', user, (result) => {
+                    dispatch({
+                      type: LOAD_USER_SUCCESS,
+                      payload: {user: result.player}
+                    });
+                    browserHistory.push('/dashboard');
+                  });
+                }
+              },
+              {
+                label: 'Stay',
+                onClick: () => {
+                }
+              }
+            ]
+          });
+        }
+
     }
   }
+
+  const handelRemach  = () => {
+    if (user) {
+      socket.emit('rematch_game', user.username);
+  }
+}
+
 
 
   
@@ -174,8 +210,11 @@ export default function Game() {
     });
 
     socket.on('rematchGame', () => {
+      setPlayerWon(false);
+      setPlayerLost(false);
       setTimeOut(false);
-      setBoard([Array(9).fill(null)]);
+      setCurrentMove(0);
+      setHistory([Array(9).fill(null)]);
     });
 
     socket.on('playerWon', (data) => {
@@ -194,6 +233,7 @@ export default function Game() {
     });
 
     socket.on('noteOpponent', () => {
+      setPlayerLost(true);
       confirmAlert({
         title: 'Sorry you Lost',
         message: `your can win next time`,
@@ -207,7 +247,69 @@ export default function Game() {
       });
     });
 
-    
+
+    socket.on('noteOpponentWon', (player) => {
+      setPlayerLost(true);
+      confirmAlert({
+        title: 'Congrates you won',
+        message: `your opponent leaved the game , you daclared as winner`,
+        buttons: [
+          {
+            label: 'Ok',
+            onClick: () => {
+                dispatch({
+                  type: LOAD_USER_SUCCESS,
+                  payload: {user: player}
+                });
+                browserHistory.push('/dashboard');
+            }
+          }
+        ],
+        onClickOutside: () => {
+          dispatch({
+            type: LOAD_USER_SUCCESS,
+            payload: {user: player}
+          });
+          browserHistory.push('/dashboard');
+        },
+      });
+    });
+
+
+    socket.on('notePlayerLeft', (data) => {
+      confirmAlert({
+        title: 'your opponent left the game',
+        message: `the room is empty now, you will be redirected to home page`,
+        buttons: [
+          {
+            label: 'Ok',
+            onClick: () => {
+                dispatch({
+                  type: LOAD_USER_SUCCESS,
+                  payload: {user: player}
+                });
+                browserHistory.push('/dashboard');
+            }
+          }
+        ],
+        onClickOutside: () => {
+          dispatch({
+            type: LOAD_USER_SUCCESS,
+            payload: {user: player}
+          });
+          browserHistory.push('/dashboard');
+        },
+      });
+    });
+
+
+
+
+
+
+
+
+
 
   }, []);
 
@@ -242,9 +344,17 @@ export default function Game() {
                   container
                   spacing={0}
                   direction="column"
-                  alignItems="center"
-                  justifyContent="center"
+
                 >
+                {playerWon || playerLost ? (    
+                <Button 
+                variant="outlined"
+                color="primary"
+                onClick={handelRemach}
+                >
+                  rematch
+                </Button>
+                ):('')}
                 <Button 
                 variant="outlined"
                 color="error"
@@ -252,7 +362,6 @@ export default function Game() {
                 >
                   leave
                 </Button>
-                  
                 </Grid>
             </Paper>
           </Grid>
