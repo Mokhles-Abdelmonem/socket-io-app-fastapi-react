@@ -5,18 +5,82 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import { logout } from '../api/logout';
 import { useSelector, useDispatch } from 'react-redux';
+import { confirmAlert } from 'react-confirm-alert';
+import { io } from 'socket.io-client';
 
+import {
+  LOAD_USER_SUCCESS,
+} from '../api/types';
 
-
+const socket = io(process.env.REACT_APP_API_URL, {
+  path: process.env.REACT_APP_SOCKET_PATH,
+});
 
 function Header() {
-
-  const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
   const dispatch = useDispatch();
+  const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
+  const user = useSelector(state => state.auth.user);
 
   const logoutHandler = () => {
-    if (dispatch && dispatch !== null && dispatch !== undefined)
-        dispatch(logout());
+
+    if(user){
+      if(user.in_room){
+        if(user.player_won || user.player_lost){
+          socket.emit('get_opponent', user.username ,(opponent) => {   
+            socket.emit('player_left_room', opponent);
+            socket.emit('leave_room', user, (result) => {
+              dispatch({
+                type: LOAD_USER_SUCCESS,
+                payload: {user: result.player}
+              });
+            });
+            socket.emit('player_logged_out', user);
+            if (dispatch && dispatch !== null && dispatch !== undefined){
+              dispatch(logout());
+            }
+        });
+
+        }else{
+          socket.emit('get_opponent', user.username ,(opponent) => {        
+            confirmAlert({
+              title: 'Attention , you are in the middle of a game',
+              message: `logout now will consider loss in game`,
+              buttons: [
+                {
+                  label: 'Logout',
+                  onClick: () => {
+                    socket.emit('player_left_in_game', opponent);
+                    socket.emit('leave_room', user, (result) => {
+                      dispatch({
+                        type: LOAD_USER_SUCCESS,
+                        payload: {user: result.player}
+                      });
+                      socket.emit('player_logged_out', user);
+                      if (dispatch && dispatch !== null && dispatch !== undefined){
+                        dispatch(logout());
+                      }
+                    });
+                  }
+                },
+                {
+                  label: 'Stay',
+                  onClick: () => {
+                  }
+                }
+              ]
+            });
+          });
+        }
+      }else{
+        socket.emit('player_logged_out', user);
+        if (dispatch && dispatch!== null && dispatch!== undefined){
+          dispatch(logout());
+        }
+      }
+    }
+
+
+
   };
 
 

@@ -97,7 +97,7 @@ export default function Game() {
 
   const handelRemach  = () => {
     if (user) {
-      socket.emit('rematch_game', user.username);
+      socket.emit('rematch_game', user.username, opponentName);
   }
 }
 
@@ -160,13 +160,6 @@ export default function Game() {
 
 
 
-
-
-
-
-
-
-
   useEffect(() => {
     if (user){
       socket.emit('update_player_session', user.username ,(result) => {
@@ -177,6 +170,8 @@ export default function Game() {
           payload: {user: currentPlayer}
         });
         setOpponentName(opponent);
+        setPlayerWon(currentPlayer.player_won);
+        setPlayerLost(currentPlayer.player_lost);
       });
       socket.emit('get_history', user.username ,(result) => {
         
@@ -225,12 +220,20 @@ export default function Game() {
       setCurrentMove(data.currentMove);
     });
 
-    socket.on('congrateWinner', () => {
+    socket.on('congrateWinner', (player) => {
       setPlayerWon(true);
+      dispatch({
+        type: LOAD_USER_SUCCESS,
+        payload: {user: player}
+      });
     });
 
-    socket.on('noteOpponent', () => {
+    socket.on('noteOpponent', (player) => {
       setPlayerLost(true);
+      dispatch({
+        type: LOAD_USER_SUCCESS,
+        payload: {user: player}
+      });
       confirmAlert({
         title: 'Sorry you Lost',
         message: `your can win next time`,
@@ -244,7 +247,6 @@ export default function Game() {
       });
     });
     socket.on('declareDraw', () => {
-      setPlayerLost(true);
       confirmAlert({
         title: 'Tie ',
         message: `the game settled to draw, your can win next time`,
@@ -259,8 +261,7 @@ export default function Game() {
     });
 
 
-    socket.on('noteOpponentWon', (player) => {
-      setPlayerLost(true);
+    socket.on('noteOpponentWon', () => {
       confirmAlert({
         title: 'Congrates you won',
         message: `your opponent leaved the game , you daclared as winner`,
@@ -320,14 +321,6 @@ export default function Game() {
         },
       });
     });
-
-
-
-
-
-
-
-
 
 
   }, []);
