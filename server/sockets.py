@@ -40,8 +40,8 @@ async def countdown_x(player_name, room, opponent_name):
     x_turn = timer_switch[room][2]
     player_won = timer_switch[room][3]
     while x_turn and x_time >= 0 and not player_won:
+        await sio_server.sleep(1)
         if opponent_name in names_list:
-            await sio_server.sleep(1)
             name_index = names_list.index(opponent_name)
             opponent = players[name_index]
             mins, secs = divmod(x_time, 60)
@@ -69,8 +69,8 @@ async def countdown_o(player_name, room, opponent_name):
     x_turn = timer_switch[room][2]
     player_won = timer_switch[room][3]
     while not x_turn and o_time >= 0 and not player_won:
+        await sio_server.sleep(1)
         if opponent_name in names_list:
-            await sio_server.sleep(1)
             name_index = names_list.index(opponent_name)
             opponent = players[name_index]
             mins, secs = divmod(o_time, 60)
@@ -471,8 +471,6 @@ async def player_logged_out(sid, user):
     username = user['username']
     if username in names_list:
         name_index = names_list.index(username)
-        names_list.pop(name_index)
-        players.pop(name_index)
         player = players[name_index]
         player['joined'] = False
         player['in_room'] = False
@@ -480,11 +478,10 @@ async def player_logged_out(sid, user):
         player['room_number'] = None
         player['player_won'] = False
         player['player_lost'] = False
-        player['player_lost'] = False
-        players[name_index] = player
         users_collection.update_one({"username" : username}, {"$set" : player})
+        names_list.pop(name_index)
+        players.pop(name_index)
         await sio_server.emit('setPlayers', players)
-        await sio_server.emit('notePlayerLeft', to=player['sid'])
 
 
 @sio_server.event
@@ -495,7 +492,6 @@ async def leave_other_player(sid, player_name):
     name_index = names_list.index(player_name)
     player = players[name_index]
     room = player['room_number']
-    sid = player['sid']
     sio_server.leave_room(sid, room)
     sio_server.enter_room(sid, 'general_room')
     player['in_room'] = False

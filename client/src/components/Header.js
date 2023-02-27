@@ -34,12 +34,11 @@ function Header() {
                 payload: {user: result.player}
               });
             });
-            socket.emit('player_logged_out', user);
+            socket.emit('player_logged_out', user, opponent);
             if (dispatch && dispatch !== null && dispatch !== undefined){
               dispatch(logout());
             }
         });
-
         }else{
           socket.emit('get_opponent', user.username ,(opponent) => {        
             confirmAlert({
@@ -55,7 +54,7 @@ function Header() {
                         type: LOAD_USER_SUCCESS,
                         payload: {user: result.player}
                       });
-                      socket.emit('player_logged_out', user);
+                      socket.emit('player_logged_out', user, opponent);
                       if (dispatch && dispatch !== null && dispatch !== undefined){
                         dispatch(logout());
                       }
@@ -72,7 +71,6 @@ function Header() {
           });
         }
       }else{
-        socket.emit('player_logged_out', user);
         if (dispatch && dispatch!== null && dispatch!== undefined){
           dispatch(logout());
         }
