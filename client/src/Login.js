@@ -21,8 +21,9 @@ import Alert from '@mui/material/Alert';
 import { loginSchema } from './schemas';
 
 import { useSelector, useDispatch } from 'react-redux';
-import { Redirect } from "react-router-dom";
+import { Redirect, useHistory } from "react-router-dom";
 import { login, reset_register_success } from './api/login'
+import { request_refresh } from './api/refresh';
 
 const theme = createTheme();
 
@@ -30,13 +31,17 @@ const theme = createTheme();
 
 
 export default function SignIn() {
-
   const dispatch = useDispatch();
   const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
-
+  const history = useHistory();
   useEffect(() => {
-    if (dispatch && dispatch !== null && dispatch !== undefined)
-        dispatch(reset_register_success());
+    if (dispatch && dispatch !== null && dispatch !== undefined){
+      dispatch(reset_register_success());
+      const refresh_token = localStorage.getItem("refresh_token");
+      if (refresh_token){
+        dispatch(request_refresh());
+      }
+    }
   }, [dispatch]);
   const [alertData, setAlertData] = useState("");
 
@@ -57,7 +62,7 @@ export default function SignIn() {
     setAlertData("")
 
   };
-
+  console.log(isAuthenticated)
   if (typeof window !== 'undefined' && isAuthenticated){
     return <Redirect to="/" />
   }

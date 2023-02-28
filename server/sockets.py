@@ -30,7 +30,7 @@ sio_app = socketio.ASGIApp(
 
 
 
-async def countdown_x(player_name, room, opponent_name):
+async def countdown_x(player_name, room, opponent_name , player_who_clicked ):
     global players
     global names_list
     global timer_switch
@@ -42,11 +42,14 @@ async def countdown_x(player_name, room, opponent_name):
     while x_turn and x_time >= 0 and not player_won:
         await sio_server.sleep(1)
         if opponent_name in names_list:
-            name_index = names_list.index(opponent_name)
-            opponent = players[name_index]
+            opponent_index = names_list.index(opponent_name)
+            opponent = players[opponent_index]
             mins, secs = divmod(x_time, 60)
             timer = '{:02d}:{:02d}'.format(mins, secs)
-            await sio_server.emit('setTimer', timer, to=opponent['sid'])
+            if player_who_clicked == "X":
+                await sio_server.emit('setTimer', timer, to=player['sid'])
+            elif player_who_clicked == "O":
+                await sio_server.emit('setTimer', timer, to=opponent['sid'])
             x_time -= 1
             if x_time < 0:
                 name_index = names_list.index(player_name)
@@ -89,54 +92,50 @@ async def countdown_o(player_name, room, opponent_name):
         
 
 
+
+async def countdown_disconnected_user(user):
+    time = 5
+    connected = False
+    username = user["username"]
+    while time and not connected:
+        await sio_server.sleep(1)
+        print("Waiting for user to return time remaining is " + str(time))
+        time -= 1
+        if time == 0:
+            if user['in_room']:
+                await sio_server.emit('congrateWinner', to=user['room_number'])
+                await sio_server.emit('noteOpponentWon', to=player['room_number'])
+        user = await users_collection.find_one({"username":username})
+        connected = user['connected']
+
+
+
+
+
+
+
 @sio_server.event
 async def connect(sid, environ, auth):
     global clients
     clients.append(sid)
     global players
-    # result = await sio_server.call('getUser', to=sid)
-    # print("user from call back >>>>>>>>>>>>>>>>> " , result)
-    print("_______________________ auth _______________________")
-    print(auth)
-    user = await users_collection.find_one({"sid":sid})
-    if user:
-        print("_______________________ User connected _______________________")
-        print(user)
-        if user['in_room']:
-            pass
-        username = user['username']
-        name_index = names_list.index(username)
-        if user['joined']:
-            names_list.append(user['username'])
-            players.append(user)
-            await sio_server.emit('setPlayers', players)
+    if auth:
+        Authorize = AuthJWT()
+        user_auth = Authorize._verified_token(auth) 
+        username = user_auth['sub']
+        users_collection.update_one({"username" : username}, {"$set" : {"connected":True}})
 
 
 @sio_server.event
 async def disconnect(sid):
     global clients
     clients.remove(sid)
-    # global players
-    # user = await users_collection.find_one({"sid":sid})
-    # if user:
-    #     print("_______________________ User disconnected _______________________")
-    #     if user['in_room']:
-    #         pass
-    #     username = user['username']
-    #     name_index = names_list.index(username)
-    #     player = players[name_index]
-    #     if user['joined']:
-    #         names_list.pop(name_index)
-    #         players.pop(name_index)
-    #         await sio_server.emit('setPlayers', players)
-    #     player['joined'] = False
-    #     player['in_room'] = False
-    #     player['side'] = ''
-    #     player['room_number'] = None
-    #     player['player_won'] = False
-    #     player['player_lost'] = False
-    #     users_collection.update_one({"username" : username}, {"$set" : player})
-    # # print("client disconnected")
+    global players
+    user = await users_collection.find_one({"sid":sid})
+    if user:
+        user['connected'] = False
+        users_collection.update_one({"username" : user["username"]}, {"$set" : {"connected":False}})
+        sio_server.start_background_task(countdown_disconnected_user, user )
 
 
 
@@ -179,8 +178,6 @@ async def get_messages(sid, localName):
 async def add_user(sid, user):
     global players
     global names_list
-    print("Added user")
-    print(user )
     player_obj = {
         "sid" : sid,
         "joined" : True,
@@ -277,21 +274,19 @@ async def check_player(sid, targetPlayer):
         return False
     return True
 
-import asyncio
-
 
 @sio_server.event
 async def switch_timer(sid, room, player_name, opponent_name, side):
     if side == 'X':
-        sio_server.start_background_task(countdown_x, player_name, room, opponent_name)
+        sio_server.start_background_task(countdown_x, player_name, room, opponent_name, "O")
     elif side == 'O':
         sio_server.start_background_task(countdown_o, player_name, room, opponent_name)
 
 @sio_server.event
-async def set_timer(sid, room, player_name):
+async def set_timer(sid, room, player_name, opponent_name):
     global timer_switch
     timer_switch[room] = [15,15,True,False]
-    sio_server.start_background_task(countdown_x, player_name, room, player_name)
+    sio_server.start_background_task(countdown_x, player_name, room, opponent_name, "X")
 
 
 @sio_server.event
@@ -518,6 +513,7 @@ async def player_logged_out(sid, user):
         players.pop(name_index)
         await sio_server.emit('setPlayers', players)
         return {"player": player}
+    return {"player": None}
 
 
 @sio_server.event
@@ -624,5 +620,9 @@ async def rematch_game(sid, player_name, opponent_name):
     opponent['player_lost'] = False
     room = player['room_number']
     timer_switch[room] = [15,15,True,False]
-    sio_server.start_background_task(countdown_x, player_name, room, player_name)
+    if player['side'] == 'X':
+        sio_server.start_background_task(countdown_x, player_name, room, opponent_name, "X")
+    if player['side'] == 'O':
+        sio_server.start_background_task(countdown_x, opponent_name, room, player_name, "O")
+    
     await sio_server.emit('rematchGame', to=room)

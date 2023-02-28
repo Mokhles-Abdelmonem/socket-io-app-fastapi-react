@@ -11,7 +11,6 @@ import { confirmAlert } from 'react-confirm-alert'; // Import
 
 export default function PLayersDrawer({allPlayers, currentPlayer, socket}) {
 
-  console.log(allPlayers);
   let avPlayers 
   if (allPlayers.length > 0 && currentPlayer){
     avPlayers = allPlayers.filter(function(e){ 

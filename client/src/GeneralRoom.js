@@ -97,7 +97,7 @@ export default function GeneralRoom({socket}) {
         }
       });
       if (user.in_room) {
-        return <Redirect to="/tictactoe" />
+        return history.push("/tictactoe");
       }
     }
 
@@ -139,6 +139,7 @@ export default function GeneralRoom({socket}) {
       });
       setOpponentName(data.opponent)
       const player_x = data.player
+      const player_o = data.opponent
       confirmAlert({
         title: 'Accepted game request',
         message: `your turn as X `,
@@ -146,12 +147,14 @@ export default function GeneralRoom({socket}) {
           {
             label: 'Ok',
             onClick: () => {
-              socket.emit('set_timer', player_x.room_number, player_x.username)
+              socket.emit('set_timer', player_x.room_number, player_x.username, player_o)
+              console.log("player_x", player_x)
+              console.log("player_o", player_o)
             }
           }
         ],
         onClickOutside: () => {
-          socket.emit('set_timer', player_x.room_number, player_x.username)
+          socket.emit('set_timer', player_x.room_number, player_x.username, player_o)
         },
       });
     });

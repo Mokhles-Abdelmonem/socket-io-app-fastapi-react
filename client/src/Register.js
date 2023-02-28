@@ -15,8 +15,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { useSelector, useDispatch } from 'react-redux';
 import { Redirect } from "react-router-dom";
 
-import { useState } from 'react';
-
+import { useState, useEffect } from 'react';
 
 
 import { Formik, Form, Field } from 'formik';
@@ -24,6 +23,7 @@ import { TextField } from 'formik-mui';
 import Alert from '@mui/material/Alert';
 import { registerSchema } from './schemas';
 import { register } from './api/register';
+import { request_refresh } from './api/refresh';
 
 
 
@@ -36,7 +36,13 @@ export default function SignUp() {
   const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
   const loading = useSelector(state => state.auth.loading);
 
-
+  useEffect(() => {
+    const refresh_token = localStorage.getItem("refresh_token")
+    if (dispatch && dispatch !== null && dispatch !== undefined && refresh_token){
+        dispatch(request_refresh());
+    }
+    
+}, [dispatch]);
 
   const initialState = {
     username: '',
@@ -60,16 +66,17 @@ export default function SignUp() {
     actions.resetForm(); 
     setAlertData({...initialState})
 
-    if (dispatch && dispatch !== null && dispatch !== undefined)
-    dispatch(register(values.username, values.email, values.password1))
-    .then((res) => setAlertData(alertData =>({...alertData,...res,})
-    ));
+    if (dispatch && dispatch !== null && dispatch !== undefined){
+      dispatch(register(values.username, values.email, values.password1))
+      .then((res) => setAlertData(alertData =>({...alertData,...res,})
+      ));
+    }
     
   }
   if (typeof window !== 'undefined' && isAuthenticated){
     return <Redirect to="/" />
   }
-  if (register_success){return <Redirect to="/" />}
+  if (register_success){return <Redirect to="/login" />}
   
   return (
     <ThemeProvider theme={theme}>

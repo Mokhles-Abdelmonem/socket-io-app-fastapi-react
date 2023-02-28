@@ -7,18 +7,24 @@ import SendIcon from '@mui/icons-material/Send';
 import { Redirect } from "react-router-dom";
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { io } from 'socket.io-client';
 
 import {
   LOAD_USER_SUCCESS,
 } from '../../api/types';
 
+const socket = io(process.env.REACT_APP_API_URL, {
+  path: process.env.REACT_APP_SOCKET_PATH,
+  auth: (cb) => {
+    cb(localStorage.getItem("access_token"));
+  },
+});
 
-
-export default function JoinButton({socket}) {
+export default function JoinButton() {
   const user = useSelector(state => state.auth.user);
   const dispatch = useDispatch();
   const handleClick = (event) => {
-    console.log(user)
+    console.log(event)
     socket.emit('add_user', user, (res) => {      
       dispatch({
         type: LOAD_USER_SUCCESS,
