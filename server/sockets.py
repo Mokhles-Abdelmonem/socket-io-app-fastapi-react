@@ -44,18 +44,23 @@ async def countdown_x(player_name, room, opponent_name , player_who_clicked ):
         if opponent_name in names_list:
             opponent_index = names_list.index(opponent_name)
             opponent = players[opponent_index]
+            name_index = names_list.index(player_name)
+            player = players[name_index]
             mins, secs = divmod(x_time, 60)
             timer = '{:02d}:{:02d}'.format(mins, secs)
             if player_who_clicked == "X":
-                await sio_server.emit('setTimer', timer, to=player['sid'])
+                player_x = player 
+                player_o = opponent 
             elif player_who_clicked == "O":
-                await sio_server.emit('setTimer', timer, to=opponent['sid'])
+                player_x = opponent
+                player_o = player
+            print("player_x", player_x)
+            print("player_o", player_o)
+            await sio_server.emit('setTimer', timer, to=player_x['sid'])
             x_time -= 1
             if x_time < 0:
-                name_index = names_list.index(player_name)
-                player = players[name_index]
                 await sio_server.emit('TimeOut', to=room)
-                await sio_server.emit('playerWon', {"player_name":player['username'], "opponent_name":opponent_name}, to=player['sid'])
+                await sio_server.emit('playerWon', {"player_name":player_o['username'], "opponent_name":player_x['username']}, to=player_o['sid'])
             x_turn = timer_switch[room][2]
             player_won = timer_switch[room][3]
         else:
@@ -620,9 +625,6 @@ async def rematch_game(sid, player_name, opponent_name):
     opponent['player_lost'] = False
     room = player['room_number']
     timer_switch[room] = [15,15,True,False]
-    if player['side'] == 'X':
-        sio_server.start_background_task(countdown_x, player_name, room, opponent_name, "X")
-    if player['side'] == 'O':
-        sio_server.start_background_task(countdown_x, opponent_name, room, player_name, "O")
-    
+    sio_server.start_background_task(countdown_x, player_name, room, opponent_name, player['side'])
+
     await sio_server.emit('rematchGame', to=room)
