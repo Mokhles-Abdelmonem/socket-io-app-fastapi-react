@@ -28,13 +28,12 @@ function Header() {
         if(user.player_won || user.player_lost){
           socket.emit('get_opponent', user.username ,(opponent) => {   
             socket.emit('player_left_room', opponent);
-            socket.emit('leave_room', user, (result) => {
+            socket.emit('player_logged_out', user, (result) => {
               dispatch({
                 type: LOAD_USER_SUCCESS,
                 payload: {user: result.player}
               });
             });
-            socket.emit('player_logged_out', user, opponent);
             if (dispatch && dispatch !== null && dispatch !== undefined){
               dispatch(logout());
             }
@@ -49,16 +48,15 @@ function Header() {
                   label: 'Logout',
                   onClick: () => {
                     socket.emit('player_left_in_game', opponent);
-                    socket.emit('leave_room', user, (result) => {
+                    socket.emit('player_logged_out', user, (result) => {
                       dispatch({
                         type: LOAD_USER_SUCCESS,
                         payload: {user: result.player}
                       });
-                      socket.emit('player_logged_out', user, opponent);
-                      if (dispatch && dispatch !== null && dispatch !== undefined){
-                        dispatch(logout());
-                      }
                     });
+                    if (dispatch && dispatch !== null && dispatch !== undefined){
+                      dispatch(logout());
+                    }
                   }
                 },
                 {
@@ -71,6 +69,12 @@ function Header() {
           });
         }
       }else{
+        socket.emit('player_logged_out', user, (result) => {
+          dispatch({
+            type: LOAD_USER_SUCCESS,
+            payload: {user: result.player}
+          });
+        });
         if (dispatch && dispatch!== null && dispatch!== undefined){
           dispatch(logout());
         }

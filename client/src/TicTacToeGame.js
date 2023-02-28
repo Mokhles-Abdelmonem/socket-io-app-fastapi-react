@@ -10,7 +10,7 @@ import React, { useEffect, useState } from 'react';
 import PLayersDrawer from './components/settingSectoins/Drawer';
 import { io } from 'socket.io-client';
 import { Message } from './components/socket/Message';
-import { useHistory } from "react-router-dom";
+import { Redirect, useHistory } from "react-router-dom";
 import { useDispatch, useSelector } from 'react-redux';
 import useWindowSize from "@rooks/use-window-size"
 import Confetti from 'react-confetti'
@@ -28,12 +28,8 @@ import Chat from './components/socket/Chat';
 
 
 
-const socket = io(process.env.REACT_APP_API_URL, {
-  path: process.env.REACT_APP_SOCKET_PATH,
-});
 
-
-export default function Game() {
+export default function Game({socket}) {
   const [messages, setMessages] = useState([]);
   const [players, setPlayers] = useState([]);
   const [opponentName, setOpponentName] = useState('');
@@ -50,9 +46,9 @@ export default function Game() {
 
 
   const user = useSelector(state => state.auth.user);
-  let browserHistory = useHistory();
   const dispatch = useDispatch();
   const { innerWidth, innerHeight, outerHeight, outerWidth } = useWindowSize();
+  let browserHistory = useHistory();
 
   const leaveAction  = () => {
       if (user) {
@@ -63,7 +59,7 @@ export default function Game() {
               type: LOAD_USER_SUCCESS,
               payload: {user: result.player}
             });
-            browserHistory.push('/dashboard');
+            browserHistory.push("/dashboard") 
           });
         }else{
           confirmAlert({
@@ -79,7 +75,7 @@ export default function Game() {
                       type: LOAD_USER_SUCCESS,
                       payload: {user: result.player}
                     });
-                    browserHistory.push('/dashboard');
+                    browserHistory.push("/dashboard") 
                   });
                 }
               },
@@ -183,7 +179,7 @@ export default function Game() {
         }
       });
       if (!user.in_room) {
-        browserHistory.push('/dashboard');
+        return <Redirect to="/dashboard" />
       }
     }
 
@@ -274,7 +270,7 @@ export default function Game() {
                   type: LOAD_USER_SUCCESS,
                   payload: {user: player}
                 });
-                browserHistory.push('/dashboard');
+                browserHistory.push("/dashboard");
               });
             }
           }
@@ -285,7 +281,7 @@ export default function Game() {
               type: LOAD_USER_SUCCESS,
               payload: {user: player}
             });
-            browserHistory.push('/dashboard');
+            browserHistory.push("/dashboard")
           });
         },
       });
@@ -305,7 +301,7 @@ export default function Game() {
                   type: LOAD_USER_SUCCESS,
                   payload: {user: player}
                 });
-                browserHistory.push('/dashboard');
+                browserHistory.push("/dashboard") 
               });
             }
           }
@@ -316,7 +312,7 @@ export default function Game() {
               type: LOAD_USER_SUCCESS,
               payload: {user: player}
             });
-            browserHistory.push('/dashboard');
+            browserHistory.push("/dashboard") 
           });
         },
       });

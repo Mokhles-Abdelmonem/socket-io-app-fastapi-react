@@ -13,7 +13,7 @@ import Container from '@mui/material/Container';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useSelector, useDispatch } from 'react-redux';
-import { useHistory } from "react-router-dom";
+import { Redirect } from "react-router-dom";
 
 import { useState } from 'react';
 
@@ -31,7 +31,6 @@ import { register } from './api/register';
 const theme = createTheme();
 
 export default function SignUp() {
-  let history = useHistory();
   const dispatch = useDispatch();
   const register_success = useSelector(state => state.auth.register_success);
   const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
@@ -67,11 +66,11 @@ export default function SignUp() {
     ));
     
   }
-  if (typeof window !== 'undefined' && isAuthenticated)
-  history.push('/');
-  if (register_success)
-  history.push('/login');
-
+  if (typeof window !== 'undefined' && isAuthenticated){
+    return <Redirect to="/" />
+  }
+  if (register_success){return <Redirect to="/" />}
+  
   return (
     <ThemeProvider theme={theme}>
         <Container component="main" maxWidth="xs">

@@ -89,21 +89,54 @@ async def countdown_o(player_name, room, opponent_name):
         
 
 
-
-
-
-
-
 @sio_server.event
 async def connect(sid, environ, auth):
     global clients
     clients.append(sid)
+    global players
+    # result = await sio_server.call('getUser', to=sid)
+    # print("user from call back >>>>>>>>>>>>>>>>> " , result)
+    print("_______________________ auth _______________________")
+    print(auth)
+    user = await users_collection.find_one({"sid":sid})
+    if user:
+        print("_______________________ User connected _______________________")
+        print(user)
+        if user['in_room']:
+            pass
+        username = user['username']
+        name_index = names_list.index(username)
+        if user['joined']:
+            names_list.append(user['username'])
+            players.append(user)
+            await sio_server.emit('setPlayers', players)
 
 
 @sio_server.event
 async def disconnect(sid):
     global clients
     clients.remove(sid)
+    # global players
+    # user = await users_collection.find_one({"sid":sid})
+    # if user:
+    #     print("_______________________ User disconnected _______________________")
+    #     if user['in_room']:
+    #         pass
+    #     username = user['username']
+    #     name_index = names_list.index(username)
+    #     player = players[name_index]
+    #     if user['joined']:
+    #         names_list.pop(name_index)
+    #         players.pop(name_index)
+    #         await sio_server.emit('setPlayers', players)
+    #     player['joined'] = False
+    #     player['in_room'] = False
+    #     player['side'] = ''
+    #     player['room_number'] = None
+    #     player['player_won'] = False
+    #     player['player_lost'] = False
+    #     users_collection.update_one({"username" : username}, {"$set" : player})
+    # # print("client disconnected")
 
 
 
@@ -146,6 +179,8 @@ async def get_messages(sid, localName):
 async def add_user(sid, user):
     global players
     global names_list
+    print("Added user")
+    print(user )
     player_obj = {
         "sid" : sid,
         "joined" : True,
@@ -216,13 +251,11 @@ async def get_opponent(sid, player_name):
     player = players[name_index]
     room = player['room_number']
     players_list = room_dict.get(room)
-    print("player_name", player_name)
-    print("players_list", players_list)
+
     if players_list:
         for opponent_name in players_list:
             if player_name != opponent_name:
                 opponent = opponent_name
-    print("opponent_name", opponent)
 
     return opponent
 
@@ -385,7 +418,6 @@ async def chat_in_room(sid, localName, message):
     else :
         messages_in_room = [message]
     messages_dict[room] = messages_in_room
-    print (messages_in_room)
     await sio_server.emit('chatInRoom', messages_in_room, room)
 
 
@@ -422,7 +454,7 @@ async def leave_room(sid, user):
     players[name_index] = player
     users_collection.update_one({"username" : username}, {"$set" : player})
     await sio_server.emit('setPlayers', players)
-    return {"player": player, "history":[None for i in range(9)]}
+    return {"player": player}
 
 
 
@@ -472,6 +504,9 @@ async def player_logged_out(sid, user):
     if username in names_list:
         name_index = names_list.index(username)
         player = players[name_index]
+        room = player['room_number']
+        sid = player['sid']
+        sio_server.leave_room(sid, room)
         player['joined'] = False
         player['in_room'] = False
         player['side'] = ''
@@ -482,6 +517,7 @@ async def player_logged_out(sid, user):
         names_list.pop(name_index)
         players.pop(name_index)
         await sio_server.emit('setPlayers', players)
+        return {"player": player}
 
 
 @sio_server.event

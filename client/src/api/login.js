@@ -49,11 +49,14 @@ export const login = (username, password) => async dispatch => {
         dispatch({
             type: LOGIN_FAIL
         });
+        return false;
+
     }
 
     dispatch({
         type: REMOVE_AUTH_LOADING
     });
+    return true;
 };
 
 

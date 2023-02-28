@@ -21,7 +21,7 @@ import Alert from '@mui/material/Alert';
 import { loginSchema } from './schemas';
 
 import { useSelector, useDispatch } from 'react-redux';
-import { useHistory } from "react-router-dom";
+import { Redirect } from "react-router-dom";
 import { login, reset_register_success } from './api/login'
 
 const theme = createTheme();
@@ -31,7 +31,6 @@ const theme = createTheme();
 
 export default function SignIn() {
 
-  let history = useHistory();
   const dispatch = useDispatch();
   const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
 
@@ -44,15 +43,24 @@ export default function SignIn() {
   const onSubmit = async (values, actions) => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
     actions.resetForm();
-    if (dispatch && dispatch !== null && dispatch !== undefined)
+    if (dispatch && dispatch !== null && dispatch !== undefined){
+      dispatch(login(values.username, values.password))
+      .then((res) => {
+        if (res === true){
+
+        }else if (res === false){
+        }else{
+          setAlertData(res.detail);
+        }
+      });
+    }
     setAlertData("")
-    dispatch(login(values.username, values.password))
-    .then((res) => setAlertData(res.detail));
 
   };
 
-  if (typeof window !== 'undefined' && isAuthenticated)
-  history.push('/');
+  if (typeof window !== 'undefined' && isAuthenticated){
+    return <Redirect to="/" />
+  }
 
   return (
     <ThemeProvider theme={theme}>

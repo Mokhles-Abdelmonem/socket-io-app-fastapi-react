@@ -4,24 +4,21 @@ import CssBaseline from '@mui/material/CssBaseline';
 import Container from '@mui/material/Container';
 import Button from '@mui/material/Button';
 import SendIcon from '@mui/icons-material/Send';
-import { useHistory } from "react-router-dom";
+import { Redirect } from "react-router-dom";
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
-import { io } from 'socket.io-client';
 import {
   LOAD_USER_SUCCESS,
 } from '../../api/types';
 
-const socket = io(process.env.REACT_APP_API_URL, {
-  path: process.env.REACT_APP_SOCKET_PATH,
-});
 
-export default function JoinButton() {
-  let history = useHistory();
+
+export default function JoinButton({socket}) {
   const user = useSelector(state => state.auth.user);
   const dispatch = useDispatch();
   const handleClick = (event) => {
+    console.log(user)
     socket.emit('add_user', user, (res) => {      
       dispatch({
         type: LOAD_USER_SUCCESS,
@@ -30,7 +27,7 @@ export default function JoinButton() {
     })
   };
   if (user){
-    if (user.joined) history.push('/dashboard');
+    if (user.joined) { return <Redirect to="/dashboard" />}
   }
   return (
     <Container component="main" maxWidth="xs">

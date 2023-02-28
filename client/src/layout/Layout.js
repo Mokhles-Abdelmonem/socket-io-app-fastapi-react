@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { request_refresh } from '../api/refresh';
 import Header from '../components/Header';
-import { useHistory } from "react-router-dom";
+import { Redirect, useHistory } from "react-router-dom";
 
 
 
@@ -23,7 +23,8 @@ const Layout = ({ children }) => {
     }, [dispatch]);
     
     if (!isAuthenticated){
-        history.push('/login');
+        return <Redirect to="/login" />
+
     }
     
     return (

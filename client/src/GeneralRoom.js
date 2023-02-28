@@ -9,7 +9,7 @@ import React, { useEffect, useState } from 'react';
 import PLayersDrawer from './components/settingSectoins/Drawer';
 import { io } from 'socket.io-client';
 import { Message } from './components/socket/Message';
-import { useHistory } from "react-router-dom";
+import { Redirect, useHistory } from "react-router-dom";
 import { useDispatch, useSelector } from 'react-redux';
 import { confirmAlert } from 'react-confirm-alert';
 import ListItemButton from '@mui/material/ListItemButton';
@@ -26,11 +26,7 @@ import {
 } from './api/types';
 
 
-
-const socket = io(process.env.REACT_APP_API_URL, {
-  path: process.env.REACT_APP_SOCKET_PATH,
-});
-export default function GeneralRoom() {
+export default function GeneralRoom({socket}) {
   const [messages, setMessages] = useState([]);
   const [players, setPlayers] = useState([]);
   const [opponentName, setOpponentName] = useState('');
@@ -50,19 +46,10 @@ export default function GeneralRoom() {
           type: LOAD_USER_SUCCESS,
           payload: {user: result}
         });
-        history.push('/');
-        const opponent = result.opponent;
+        history.push("/") 
       });
     }
   }
-
-
-
-
-
-
-
-
 
   useEffect(() => {
     socket.on('connect', () => {
@@ -74,6 +61,10 @@ export default function GeneralRoom() {
     });
 
 
+    socket.on('getUser',  ()  => {
+      return user
+    });
+    
     socket.on('playerJoined', (data) => {
       setMessages((prevMessages) => [...prevMessages, { ...data, type: 'join'}]);
         const playersList = data.players;
@@ -83,7 +74,7 @@ export default function GeneralRoom() {
       setPlayers(data)
     });
     socket.on('pushToRoom', () => {
-      history.push('/tictactoe');
+      history.push("/tictactoe") 
     });
 
     if (user){
@@ -106,7 +97,7 @@ export default function GeneralRoom() {
         }
       });
       if (user.in_room) {
-        history.push('/tictactoe');
+        return <Redirect to="/tictactoe" />
       }
     }
 

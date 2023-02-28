@@ -11,10 +11,15 @@ import { confirmAlert } from 'react-confirm-alert'; // Import
 
 export default function PLayersDrawer({allPlayers, currentPlayer, socket}) {
 
-  
-  const avPlayers = allPlayers.filter(function(e){ 
-    return e.username !== currentPlayer.username && !e.in_room; 
-  });
+  console.log(allPlayers);
+  let avPlayers 
+  if (allPlayers.length > 0 && currentPlayer){
+    avPlayers = allPlayers.filter(function(e){ 
+      return e.username !== currentPlayer.username && !e.in_room; 
+    });
+  }else{
+    avPlayers = []
+  }
   const handleListItemClick = (event, playerId) => {
     const parent = document.getElementById(playerId);
     const targetPlayer = parent.getElementsByTagName('span')[0].innerHTML;
