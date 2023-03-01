@@ -1,6 +1,6 @@
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
-from sockets import sio_app
+from sockets import sio_app , sio_server , messages, names_list, players
 from pydantic import BaseModel
 from typing import Union
 import requests
@@ -15,7 +15,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
-from serializer import RegisterJson, LoginJson
+from serializer import RegisterJson, LoginJson, MessageJson
 import re
 from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import AuthJWTException
@@ -162,6 +162,24 @@ async def read_own_items(current_user: User = Depends(get_current_active_user)):
 
 
 
+
+
+@app.post("/message")
+async def set_message(message: MessageJson, current_user: User = Depends(get_current_active_user)):
+    global messages
+
+    current_user.pop("_id", None)
+    current_user.pop("hashed_password", None)
+    messages.append(
+        {'sid': current_user['sid'],
+         'message': message.text,
+         'player': current_user,
+         'type': 'chat'
+         }
+    )
+    print(messages)
+    await sio_server.emit('chat', messages, 'general_room')    
+    return {f"message from {current_user['username']}": message.text}
 
 
 

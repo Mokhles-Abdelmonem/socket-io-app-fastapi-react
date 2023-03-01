@@ -300,31 +300,25 @@ export default function Game({socket}) {
 
 
     socket.on('notePlayerLeft', () => {
+      socket.emit('leave_other_player', user.username, (player) => {
+        dispatch({
+          type: LOAD_USER_SUCCESS,
+          payload: {user: player}
+        });
+        browserHistory.push("/dashboard") 
+      });
       confirmAlert({
         title: 'your opponent left the game',
-        message: `the room is empty now, you will be redirected to home page`,
+        message: `the room is empty now, we redirected you home page`,
         buttons: [
           {
             label: 'Ok',
             onClick: () => {
-              socket.emit('leave_other_player', user.username, (player) => {
-                dispatch({
-                  type: LOAD_USER_SUCCESS,
-                  payload: {user: player}
-                });
-                browserHistory.push("/dashboard") 
-              });
+
             }
           }
         ],
         onClickOutside: () => {
-          socket.emit('leave_other_player', user.username, (player) => {
-            dispatch({
-              type: LOAD_USER_SUCCESS,
-              payload: {user: player}
-            });
-            browserHistory.push("/dashboard") 
-          });
         },
       });
     });
@@ -341,7 +335,7 @@ export default function Game({socket}) {
       height={outerHeight}
       />
     ):('')}
-    <Box sx={{ width: '100%' }}>
+    <Box  sx={{ width: '100%' }}>
       <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
         <Grid item xs={6} md={4}>
           <Chat
@@ -349,6 +343,8 @@ export default function Game({socket}) {
           />
         </Grid>
         <Grid item xs={6} md={8}>
+        <Grid container spacing={2}>
+
         <Grid item xs={16}>
               <Paper
                 sx={{
@@ -385,63 +381,67 @@ export default function Game({socket}) {
             </Paper>
           </Grid>
           <Grid item xs={16}>
-          <Grid item xs={16}>
+            <Grid container spacing={2}>
 
-              <Paper
-                sx={{
-                  p: 2,
-                  margin: 'auto',
-                  maxWidth: 500,
-                  flexGrow: 1,
-                }}
-                elevation={24}
-              >
+            <Grid item xs={16}>
 
-              <Container maxWidth="sm">
-
-                <Box sx={{ bgcolor: '#e3f2fd', minHeight: '10vh' }}>
-                <Grid
-                  container
-                  spacing={0}
-                  direction="column"
-                  alignItems="center"
-                  justifyContent="center"
+                <Paper
+                  sx={{
+                    p: 2,
+                    margin: 'auto',
+                    maxWidth: 500,
+                    flexGrow: 1,
+                  }}
+                  elevation={24}
                 >
 
-                  <Typography variant="h2" gutterBottom>
-                    {timer ? timer: '00:15'}
-                  </Typography>
-                  
-                </Grid>
-                </Box>
-              </Container>
-            </Paper>
+                <Container maxWidth="sm">
+
+                  <Box sx={{ bgcolor: '#e3f2fd', minHeight: '10vh' }}>
+                  <Grid
+                    container
+                    spacing={0}
+                    direction="column"
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+
+                    <Typography variant="h2" gutterBottom>
+                      {timer ? timer: '00:15'}
+                    </Typography>
+                    
+                  </Grid>
+                  </Box>
+                </Container>
+              </Paper>
+              </Grid>
+              <Grid item xs={16}>
+                <Paper
+                  sx={{
+                    p: 2,
+                    margin: 'auto',
+                    maxWidth: 500,
+                    flexGrow: 1,
+                  }}
+                  elevation={24}
+                >
+
+                <Container maxWidth="sm">
+                  <Box sx={{ minHeight: '50vh' }}>
+                    <div className='game'>
+                      <Board
+                      squares={squares}
+                      handleClick={handleClick}
+                      />
+                    </div>
+                  </Box>
+
+                </Container>
+              </Paper>
             </Grid>
-            <Grid item xs={16}>
-              <Paper
-                sx={{
-                  p: 2,
-                  margin: 'auto',
-                  maxWidth: 500,
-                  flexGrow: 1,
-                }}
-                elevation={24}
-              >
-
-              <Container maxWidth="sm">
-                <Box sx={{ minHeight: '50vh' }}>
-                  <div className='game'>
-                    <Board
-                    squares={squares}
-                    handleClick={handleClick}
-                    />
-                  </div>
-                </Box>
-
-              </Container>
-            </Paper>
+            </Grid>
           </Grid>
-          </Grid>
+        </Grid>
 
         </Grid>
       </Grid>

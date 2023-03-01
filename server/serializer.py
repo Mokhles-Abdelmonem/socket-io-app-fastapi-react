@@ -58,3 +58,10 @@ class UserInDB(User):
 class Settings(BaseModel):
     authjwt_secret_key: str = "secret"
 
+
+
+
+class MessageJson(BaseModel):
+    """
+    """
+    text: Union[str, None] = None

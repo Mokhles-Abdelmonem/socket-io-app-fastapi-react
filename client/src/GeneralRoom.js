@@ -102,9 +102,20 @@ export default function GeneralRoom({socket}) {
       if (user.in_room) {
         return history.push("/tictactoe");
       }
+      const hangingRequestPlayer = localStorage.getItem('hanging_request');
+      if (hangingRequestPlayer) {
+        socket.emit('cancel_request', hangingRequestPlayer);
+        localStorage.removeItem('hanging_request');
+      }
+      const hangingResponsePlayer = localStorage.getItem('hanging_response');
+      if (hangingResponsePlayer) {
+        socket.emit('decline_request', hangingResponsePlayer);
+        localStorage.removeItem('hanging_response');
+      }
     }
 
     socket.on('gameRequest', (data) => {
+      localStorage.setItem('hanging_response', data.player_x_name)
       confirmAlert({
         title: 'Confirm game request',
         message: `${data.player_x_name} Requesting a game with you`,
@@ -112,6 +123,7 @@ export default function GeneralRoom({socket}) {
           {
             label: 'Yes',
             onClick: () => {
+              localStorage.removeItem('hanging_response');
               socket.emit('join_room', data.player_x_name, data.player_o_name,(result) => {
                 const player_x = result[0];
                 const player_o = result[1];
@@ -127,15 +139,21 @@ export default function GeneralRoom({socket}) {
           {
             label: 'No',
             onClick: () => {
+              localStorage.removeItem('hanging_response');
               socket.emit('decline_request', data.player_x_name);
             }
           }
-        ]
+        ],
+        onClickOutside: () => {
+          localStorage.removeItem('hanging_response');
+          socket.emit('decline_request', data.player_x_name);
+        },
       });
     });
 
 
     socket.on('setPlayer', (data) => {
+      localStorage.removeItem('hanging_request');
       dispatch({
         type: LOAD_USER_SUCCESS,
         payload: {user: data.player}
@@ -143,22 +161,17 @@ export default function GeneralRoom({socket}) {
       setOpponentName(data.opponent)
       const player_x = data.player
       const player_o = data.opponent
+      socket.emit('set_timer', player_x.room_number, player_x.username, player_o)
       confirmAlert({
         title: 'Accepted game request',
-        message: `your turn as X `,
+        message: `your turn as X your time to play`,
         buttons: [
           {
             label: 'Ok',
             onClick: () => {
-              socket.emit('set_timer', player_x.room_number, player_x.username, player_o)
-              console.log("player_x", player_x)
-              console.log("player_o", player_o)
             }
           }
         ],
-        onClickOutside: () => {
-          socket.emit('set_timer', player_x.room_number, player_x.username, player_o)
-        },
       });
     });
     socket.on('setPlayers', (data) => {
@@ -171,6 +184,7 @@ export default function GeneralRoom({socket}) {
 
 
   socket.on('requestDeclined', () => {
+    localStorage.removeItem('hanging_request');
     confirmAlert({
       title: 'Declined game request',
       message: `Game request declined`,
@@ -185,6 +199,7 @@ export default function GeneralRoom({socket}) {
   });
 
   socket.on('requestCanceled', () => {
+    localStorage.removeItem('hanging_response');
     confirmAlert({
       title: 'Game Canceled',
       message: `The Request Canceled`,
@@ -199,6 +214,7 @@ export default function GeneralRoom({socket}) {
   });
 
   socket.on('chat', (messages) => {
+    console.log(messages);
     setMessages(messages);
   });
 
@@ -241,7 +257,8 @@ export default function GeneralRoom({socket}) {
               socket={socket}
             />
           </Grid>
-          <Grid item xs={12}>
+          <Grid item  xs={12}>
+          <Grid container spacing={2}>
             <Grid item xs={12}>
               <Paper
                 sx={{
@@ -327,6 +344,7 @@ export default function GeneralRoom({socket}) {
               </Container>
             </Paper>
             </Grid>
+          </Grid>
 
           </Grid>
       </Grid>

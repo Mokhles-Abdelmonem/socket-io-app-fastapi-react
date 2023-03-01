@@ -45,98 +45,101 @@ export default function Chat({socket}) {
   return (
     <div>
           <Grid item xs={12}>
-            <Grid item xs={12}>
-              <Paper
-                sx={{
-                  p: 2,
-                  margin: 'auto',
-                  maxWidth: 500,
-                  flexGrow: 1,
-                }}
-                elevation={24}
-              >
+            <Grid container spacing={2}>
 
-              <Container maxWidth="sm">
-
-
-              <Box sx={{ display: 'flex', alignItems: 'flex-end' }}>
-              {Level > 1 ? 
-              (
-                <form>
-                <AccountCircle sx={{ color: 'action.active', mr: 1, my: 0.5 }} />
-                  <TextField 
-                  id="input-with-message" 
-                  label="send message" 
-                  variant="standard" 
-                  onChange={(event) => {
-                    const value = event.target.value.trim();
-                    setMessage(value);
-                  }}
-                  />
-  
-                  <Button 
-                    variant="contained"
-                    size="large"
-                    endIcon={<SendIcon />}
-                    onClick={() => {
-                        if (message && message.length) {
-                          if (user.in_room) {
-                            socket.emit('chat_in_room', user.username, message);
-                          }
-                        }
-                        var messageBox = document.getElementById('input-with-message');
-                        messageBox.value = '';
-                        setMessage('');
-                      }
-                    }
-                    >
-                      Send
-                  </Button>
-                </form>
-  
-              ):(
-                <Typography>
-                  you are a level 1 player
-                  win 3 games to get the next level
-                  and be able to chat
-                </Typography>
-              )}
-              </Box>
-
-              </Container>
-            </Paper>
-            </Grid>
-            <Grid item xs={12}>
-
+              <Grid item xs={12}>
                 <Paper
-                sx={{
-                  p: 2,
-                  margin: 'auto',
-                  maxWidth: 500,
-                  flexGrow: 1,
-                }}
-                elevation={24}
-              >
+                  sx={{
+                    p: 2,
+                    margin: 'auto',
+                    maxWidth: 500,
+                    flexGrow: 1,
+                  }}
+                  elevation={24}
+                >
+
                 <Container maxWidth="sm">
 
-                <Box sx={{ 
-                  bgcolor: '#e3f2fd',
-                  height: '93vh',
-                  overflow: 'auto',
-                  }}>
-                <Stack spacing={2} sx={{ maxWidth: 600 }}>
-                    {messages.map((message, index) => (
-                        <SnackbarContent 
-                        key={index}
-                        sx={{ bgcolor: '#42a5f5' }}
-                        message={<Message message={message} />}
-                        />
-                      ))}
 
-                  </Stack>
+                <Box sx={{ display: 'flex', alignItems: 'flex-end' }}>
+                {Level > 1 ? 
+                (
+                  <form>
+                  <AccountCircle sx={{ color: 'action.active', mr: 1, my: 0.5 }} />
+                    <TextField 
+                    id="input-with-message" 
+                    label="send message" 
+                    variant="standard" 
+                    onChange={(event) => {
+                      const value = event.target.value.trim();
+                      setMessage(value);
+                    }}
+                    />
+    
+                    <Button 
+                      variant="contained"
+                      size="large"
+                      endIcon={<SendIcon />}
+                      onClick={() => {
+                          if (message && message.length) {
+                            if (user.in_room) {
+                              socket.emit('chat_in_room', user.username, message);
+                            }
+                          }
+                          var messageBox = document.getElementById('input-with-message');
+                          messageBox.value = '';
+                          setMessage('');
+                        }
+                      }
+                      >
+                        Send
+                    </Button>
+                  </form>
+    
+                ):(
+                  <Typography>
+                    you are a level 1 player
+                    win 3 games to get the next level
+                    and be able to chat
+                  </Typography>
+                )}
                 </Box>
-              </Container>
-            </Paper>
+
+                </Container>
+              </Paper>
+              </Grid>
+              <Grid item xs={12}>
+
+                  <Paper
+                  sx={{
+                    p: 2,
+                    margin: 'auto',
+                    maxWidth: 500,
+                    flexGrow: 1,
+                  }}
+                  elevation={24}
+                >
+                  <Container maxWidth="sm">
+
+                  <Box sx={{ 
+                    bgcolor: '#e3f2fd',
+                    height: '93vh',
+                    overflow: 'auto',
+                    }}>
+                  <Stack spacing={2} sx={{ maxWidth: 600 }}>
+                      {messages.map((message, index) => (
+                          <SnackbarContent 
+                          key={index}
+                          sx={{ bgcolor: '#42a5f5' }}
+                          message={<Message message={message} />}
+                          />
+                        ))}
+
+                    </Stack>
+                  </Box>
+                </Container>
+              </Paper>
+              </Grid>
             </Grid>
 
           </Grid>

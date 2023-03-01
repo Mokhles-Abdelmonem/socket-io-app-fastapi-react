@@ -418,6 +418,8 @@ async def join_room(sid, playerx, playero):
 @sio_server.event
 async def chat(sid, localName, message):
     global messages
+    global names_list
+    global players
     name_index = names_list.index(localName)
     player = players[name_index]
     messages.append(
