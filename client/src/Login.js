@@ -52,7 +52,7 @@ export default function SignIn() {
       dispatch(login(values.username, values.password))
       .then((res) => {
         if (res === true){
-
+          window.location.reload();
         }else if (res === false){
         }else{
           setAlertData(res.detail);
@@ -64,7 +64,7 @@ export default function SignIn() {
   };
   console.log(isAuthenticated)
   if (typeof window !== 'undefined' && isAuthenticated){
-    return <Redirect to="/" />
+    history.push("/")
   }
 
   return (

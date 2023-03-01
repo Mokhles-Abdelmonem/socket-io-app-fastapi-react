@@ -38,6 +38,7 @@ export default function Game({socket}) {
   
   const [playerWon, setPlayerWon] = useState(false);
   const [playerLost, setPlayerLost] = useState(false);
+  const [playerDraw, setPlayerDraw] = useState(false);
 
   const [history, setHistory] = useState([Array(9).fill(null)]);
   const [currentMove, setCurrentMove] = useState(0);
@@ -52,7 +53,7 @@ export default function Game({socket}) {
 
   const leaveAction  = () => {
       if (user) {
-        if (playerWon || playerLost){
+        if (playerWon || playerLost || playerDraw){
           socket.emit('player_left_room', opponentName);
           socket.emit('leave_room', user, (result) => {
             dispatch({
@@ -168,6 +169,7 @@ export default function Game({socket}) {
         setOpponentName(opponent);
         setPlayerWon(currentPlayer.player_won);
         setPlayerLost(currentPlayer.player_lost);
+        setPlayerDraw(currentPlayer.player_draw);
       });
       socket.emit('get_history', user.username ,(result) => {
         
@@ -200,6 +202,7 @@ export default function Game({socket}) {
     socket.on('rematchGame', () => {
       setPlayerWon(false);
       setPlayerLost(false);
+      setPlayerDraw(false);
       setTimeOut(false);
       setCurrentMove(0);
       setHistory([Array(9).fill(null)]);
@@ -224,6 +227,12 @@ export default function Game({socket}) {
       });
     });
 
+
+    socket.on('setDisconnectedPlayer', (username) => {
+      console.log('setDisconnectedPlayer', username)
+      socket.emit('set_disconnected_player', username);
+
+    });
     socket.on('noteOpponent', (player) => {
       setPlayerLost(true);
       dispatch({
@@ -243,6 +252,8 @@ export default function Game({socket}) {
       });
     });
     socket.on('declareDraw', () => {
+      setPlayerDraw(true);
+      socket.emit('set_player_draw', user.username);
       confirmAlert({
         title: 'Tie ',
         message: `the game settled to draw, your can win next time`,
@@ -354,7 +365,7 @@ export default function Game({socket}) {
                   direction="column"
 
                 >
-                {playerWon || playerLost ? (    
+                {playerWon || playerLost || playerDraw? (    
                 <Button 
                 variant="outlined"
                 color="primary"
@@ -468,7 +479,6 @@ function calculateWinner(squares) {
     }
   }}
   var nulls = countNull(squares);
-  console.log(nulls);
   if (nulls === 0){
     return 'tie';
   }

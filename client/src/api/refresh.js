@@ -33,9 +33,6 @@ export const request_refresh = () => async dispatch => {
                 type: REFRESH_SUCCESS
             });
             localStorage.setItem('access_token', data.access_token);
-            dispatch({
-                type: AUTHENTICATED_SUCCESS
-            });
             dispatch(load_user());
         } else {
             dispatch({

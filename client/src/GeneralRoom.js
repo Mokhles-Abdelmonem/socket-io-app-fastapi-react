@@ -96,6 +96,9 @@ export default function GeneralRoom({socket}) {
           setMessages(result);
         }
       });
+      if (!user.joined) {
+        return history.push("/");
+      }
       if (user.in_room) {
         return history.push("/tictactoe");
       }

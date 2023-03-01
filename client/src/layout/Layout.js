@@ -9,6 +9,7 @@ import { Redirect, useHistory } from "react-router-dom";
 
 const Layout = ({ children }) => {
     const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
+    const user = useSelector(state => state.auth.user);
     const dispatch = useDispatch();
     let history = useHistory();
 
@@ -23,8 +24,7 @@ const Layout = ({ children }) => {
     }, [dispatch]);
     
     if (!isAuthenticated){
-        return <Redirect to="/login" />
-
+        history.push("/login")
     }
     
     return (

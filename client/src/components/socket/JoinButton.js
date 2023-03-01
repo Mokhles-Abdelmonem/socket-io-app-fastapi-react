@@ -21,20 +21,32 @@ const socket = io(process.env.REACT_APP_API_URL, {
 });
 
 export default function JoinButton() {
+  const [PlayerAdded, setPlayerAdded] = useState(false);
+
+
   const user = useSelector(state => state.auth.user);
   const dispatch = useDispatch();
-  const handleClick = (event) => {
-    console.log(event)
-    socket.emit('add_user', user, (res) => {      
+  function handleClick () {
+
+    const callback = socket.emit('add_user', user, (res) => {   
       dispatch({
         type: LOAD_USER_SUCCESS,
         payload: {user: res}
       });
     })
+    var callbackNumber = Object.keys(callback.acks)[0];
+    if (callbackNumber > 0){
+      console.log(callbackNumber)
+    }
   };
-  if (user){
-    if (user.joined) { return <Redirect to="/dashboard" />}
-  }
+
+
+    if (user){
+      if (user.joined) { return <Redirect to="/dashboard" />}
+    }
+
+
+
   return (
     <Container component="main" maxWidth="xs">
     <CssBaseline />
@@ -50,14 +62,12 @@ export default function JoinButton() {
     variant="contained"
     size="large"
     endIcon={<SendIcon />}
-    onClick={(event) => handleClick(event)}
+    onClick={handleClick}
     >
       Join
     </Button>
     </Box>
   </Container>
-
-
   );
   }
   
