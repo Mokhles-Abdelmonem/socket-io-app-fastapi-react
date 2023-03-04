@@ -199,6 +199,8 @@ async def get_history(sid, localName):
         if room_history:
             nextHistory = room_history[0]
             CMove = room_history[1]
+            print("room_history", room_history)
+            print("CMove", CMove)
             return [nextHistory, CMove]
 
 
@@ -667,6 +669,7 @@ async def rematch_game(sid, player_name, opponent_name):
     global players
     global names_list
     global timer_switch
+    global history
     name_index = names_list.index(player_name)
     player = players[name_index]
     name_index = names_list.index(opponent_name)
@@ -679,6 +682,12 @@ async def rematch_game(sid, player_name, opponent_name):
     opponent['player_draw'] = False
     room = player['room_number']
     timer_switch[room] = [15,15,True,False]
+
+    room_history = history.get(room)
+    if room_history:
+        history.update({room: [[list(None for i in range(9))], 0]})
+        print("history", history)
+
     sio_server.start_background_task(countdown_x, player_name, room, opponent_name, player['side'])
 
     await sio_server.emit('rematchGame', to=room)
