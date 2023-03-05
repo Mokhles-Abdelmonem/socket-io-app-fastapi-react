@@ -15,7 +15,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
-from serializer import RegisterJson, LoginJson, MessageJson
+from serializer import RegisterJson, LoginJson, MessageJson, RoleJson
 import re
 from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import AuthJWTException
@@ -120,7 +120,7 @@ async def user_register(json_data: RegisterJson):
     if user_exist:
         return JSONResponse(
         status_code=409,
-        content={"username": f"username allready exist"},
+        content={"username": f"username already exist"},
     )
 
     if not email_valid(json_data.email):
@@ -182,6 +182,22 @@ async def set_message(message: MessageJson, current_user: User = Depends(get_cur
     return {f"message from {current_user['username']}": message.text}
 
 
+
+
+
+
+
+
+@app.post("/roles")
+async def set_role(role: RoleJson):
+    role_exist = await users_collection.find_one({"role_number": role.role_number})
+    if role_exist:
+        return JSONResponse(
+        status_code=409,
+        content={"role": f"role already exist"},
+    )
+    role_collection.insert_one({"role_number": role.role_number})
+    return role
 
 
 

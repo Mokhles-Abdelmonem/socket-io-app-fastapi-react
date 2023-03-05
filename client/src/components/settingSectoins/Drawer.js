@@ -25,26 +25,30 @@ export default function PLayersDrawer({allPlayers, currentPlayer, socket}) {
     if (event.target){
       socket.emit('check_player', targetPlayer, (exist) => {
         if(exist){
-          socket.emit('game_request', currentPlayer.username , targetPlayer)
-          localStorage.setItem('hanging_request', targetPlayer)
-          confirmAlert({
-            title: 'Confirm game request',
-            message: `Waiting ${targetPlayer} response`,
-            buttons: [
-              {
-                label: 'Cancel',
-                onClick: () => {
-                  localStorage.removeItem('hanging_request');
-                  socket.emit('cancel_request', targetPlayer);
+          socket.emit('get_roles',(roles) => {
+            console.log("roles", roles);
+            socket.emit('game_request', currentPlayer.username , targetPlayer)
+            localStorage.setItem('hanging_request', targetPlayer)
+            confirmAlert({
+              title: 'Confirm game request',
+              message: `Waiting ${targetPlayer} response`,
+              buttons: [
+                {
+                  label: 'Cancel',
+                  onClick: () => {
+                    localStorage.removeItem('hanging_request');
+                    socket.emit('cancel_request', targetPlayer);
+                  }
                 }
-              }
-            ],
-            onClickOutside: () => {
-              localStorage.removeItem('hanging_request');
-              socket.emit('cancel_request', targetPlayer);
-            },
+              ],
+              onClickOutside: () => {
+                localStorage.removeItem('hanging_request');
+                socket.emit('cancel_request', targetPlayer);
+              },
+            });
           });
         };
+
       });
 
     }

@@ -65,3 +65,11 @@ class MessageJson(BaseModel):
     """
     """
     text: Union[str, None] = None
+
+
+
+
+class RoleJson(BaseModel):
+    """
+    """
+    role_number: int

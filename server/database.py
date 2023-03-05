@@ -7,3 +7,4 @@ client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_DETAILS)
 database = client.MokhlesGame
 
 users_collection = database.get_collection("users")
+role_collection = database.get_collection("roles")

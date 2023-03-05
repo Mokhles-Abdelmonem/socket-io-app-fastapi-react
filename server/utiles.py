@@ -8,7 +8,7 @@ from passlib.context import CryptContext
 import re
 from schema import ResponseModel, user_helper
 from fastapi_jwt_auth import AuthJWT
-from database import users_collection
+from database import users_collection, role_collection
 from serializer import Token, TokenForm, TokenData, User, UserInDB, Settings
 
 
@@ -130,3 +130,10 @@ async def retrieve_users():
     async for user in users_collection.find():
         users.append(user)
     return users
+
+
+async def retrieve_roles():
+    roles = []
+    async for role in role_collection.find():
+        roles.append(role)
+    return roles

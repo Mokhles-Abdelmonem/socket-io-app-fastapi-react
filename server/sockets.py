@@ -3,7 +3,7 @@ import re
 import time
   
 # define the countdown func.
-from utiles import get_current_active_user, User , Depends, AuthJWT, users_collection
+from utiles import get_current_active_user, User , Depends, AuthJWT, users_collection, retrieve_roles
 
 room_number = 0
 room_dict = {}
@@ -15,6 +15,7 @@ messages_dict = {}
 history = {}
 clients = []
 timer_switch = {}
+role_dict = {}
 
 
 
@@ -383,12 +384,14 @@ async def get_players(sid):
     
 
 @sio_server.event
-async def join_room(sid, playerx, playero):
+async def join_room(sid, playerx, playero, role=3):
     global room_number
     room_number += 1
     global names_list
     global players
     global room_dict
+    global role_dict
+
     player_x_index = names_list.index(playerx)
     player_o_index = names_list.index(playero)
     player_x = players[player_x_index]
@@ -416,6 +419,7 @@ async def join_room(sid, playerx, playero):
     players[player_o_index] = player_o
     player_x_sid = player_x['sid']
     room_dict[str(room_number)] = [playerx, playero]
+    role_dict[str(room_number)] = role
     await sio_server.emit('setPlayer', {"player":player_x, "opponent":player_o['username']} ,  to=player_x_sid)
     await sio_server.emit('setPlayers', players)
     await sio_server.emit('playersJoinedRoom',[player_x, player_o] , str(room_number))
@@ -440,6 +444,16 @@ async def chat(sid, localName, message):
          }
     )
     await sio_server.emit('chat', messages, 'general_room')
+
+
+   
+
+
+@sio_server.event
+async def get_roles(sid):
+    roles = await retrieve_roles()
+    return {"roles":roles}
+
 
 
 
@@ -514,14 +528,15 @@ async def player_left_in_game(sid, opponent_name):
     name_index = names_list.index(opponent_name)
     player = players[name_index]
     win_number = player.get('win_number')
+    room = player['room_number']
+    role = role_dict.get(room)
     if win_number:
         player['win_number'] += 1
-        player['level'] = int(player['win_number'] / 3) + 1
+        player['level'] = int(player['win_number'] / role) + 1
     else:
         player['win_number'] = 1
         player['level'] = 1
     player['player_won'] = True
-    room = player['room_number']
     room_in_timer = timer_switch.get(room)
     if room_in_timer:
         room_in_timer[3] = True
@@ -622,6 +637,7 @@ async def handelPlay(sid, room, nextHistory, currentMove):
 async def declare_winner(sid, winner, opponent_name):
     global players
     global names_list
+    global role_dict
     name_index = names_list.index(winner)
     opponent_index = names_list.index(opponent_name)
     player = players[name_index]
@@ -632,9 +648,10 @@ async def declare_winner(sid, winner, opponent_name):
         if not contain_str:
             room_number = number
     win_number = player.get('win_number')
+    role = role_dict.get(room_number)
     if win_number:
         player['win_number'] += 1
-        player['level'] = int(player['win_number'] / 3) + 1
+        player['level'] = int(player['win_number'] / role) + 1
     else:
         player['win_number'] = 1
         player['level'] = 1
