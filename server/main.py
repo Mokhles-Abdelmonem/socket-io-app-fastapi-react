@@ -113,8 +113,6 @@ def refresh(Authorize: AuthJWT = Depends()):
 
 @app.post("/register/", response_model=UserInDB)
 async def user_register(json_data: RegisterJson):
-    print("json_data")
-    print(json_data)
 
     user_exist = await users_collection.find_one({"username": json_data.username})
     if user_exist:
@@ -177,7 +175,6 @@ async def set_message(message: MessageJson, current_user: User = Depends(get_cur
          'type': 'chat'
          }
     )
-    print(messages)
     await sio_server.emit('chat', messages, 'general_room')    
     return {f"message from {current_user['username']}": message.text}
 
@@ -190,7 +187,7 @@ async def set_message(message: MessageJson, current_user: User = Depends(get_cur
 
 @app.post("/roles")
 async def set_role(role: RoleJson):
-    role_exist = await users_collection.find_one({"role_number": role.role_number})
+    role_exist = await role_collection.find_one({"role_number": role.role_number})
     if role_exist:
         return JSONResponse(
         status_code=409,

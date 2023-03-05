@@ -344,12 +344,12 @@ async def stop_time(sid, room, opponent_name):
 
 
 @sio_server.event
-async def game_request(sid,  player_x_name, player_o_name):
+async def game_request(sid,  player_x_name, player_o_name, role):
     global players
     global names_list
     name_index = names_list.index(player_o_name)
     player_o = players[name_index]
-    await sio_server.emit('gameRequest', {"player_x_name":player_x_name, "player_o_name":player_o_name}, to=player_o["sid"])
+    await sio_server.emit('gameRequest', {"player_x_name":player_x_name, "player_o_name":player_o_name, "role":role}, to=player_o["sid"])
 
 @sio_server.event
 async def decline_request(sid,  player_x_name):
@@ -452,7 +452,7 @@ async def chat(sid, localName, message):
 @sio_server.event
 async def get_roles(sid):
     roles = await retrieve_roles()
-    return {"roles":roles}
+    return roles
 
 
 

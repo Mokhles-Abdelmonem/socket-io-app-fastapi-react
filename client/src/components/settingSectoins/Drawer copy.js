@@ -26,36 +26,25 @@ export default function PLayersDrawer({allPlayers, currentPlayer, socket}) {
       socket.emit('check_player', targetPlayer, (exist) => {
         if(exist){
           socket.emit('get_roles',(roles) => {
-            const buttons = roles.map((role) => {
-              return {
-                label: `${role} role`,
-                onClick: () => {
-                  socket.emit('game_request', currentPlayer.username, targetPlayer, role)
-                  localStorage.setItem('hanging_request', targetPlayer)
-                  confirmAlert({
-                    title: 'Confirm game request',
-                    message: `Waiting ${targetPlayer} response`,
-                    buttons: [
-                      {
-                        label: 'Cancel',
-                        onClick: () => {
-                          localStorage.removeItem('hanging_request');
-                          socket.emit('cancel_request', targetPlayer);
-                        }
-                      }
-                    ],
-                    onClickOutside: () => {
-                      localStorage.removeItem('hanging_request');
-                      socket.emit('cancel_request', targetPlayer);
-                    },
-                  });
-                }
-              }
-            });
+            console.log("roles", roles);
+            socket.emit('game_request', currentPlayer.username , targetPlayer)
+            localStorage.setItem('hanging_request', targetPlayer)
             confirmAlert({
-              title: 'Game request',
-              message: `Choose the role for the game (role number) is the number of winning required to get next level`,
-              buttons: buttons
+              title: 'Confirm game request',
+              message: `Waiting ${targetPlayer} response`,
+              buttons: [
+                {
+                  label: 'Cancel',
+                  onClick: () => {
+                    localStorage.removeItem('hanging_request');
+                    socket.emit('cancel_request', targetPlayer);
+                  }
+                }
+              ],
+              onClickOutside: () => {
+                localStorage.removeItem('hanging_request');
+                socket.emit('cancel_request', targetPlayer);
+              },
             });
           });
         };

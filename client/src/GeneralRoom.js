@@ -118,7 +118,7 @@ export default function GeneralRoom({socket}) {
       localStorage.setItem('hanging_response', data.player_x_name)
       confirmAlert({
         title: 'Confirm game request',
-        message: `${data.player_x_name} Requesting a game with you`,
+        message: `${data.player_x_name} Requesting a game with role ${data.role}`,
         buttons: [
           {
             label: 'Yes',
