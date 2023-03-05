@@ -3,13 +3,9 @@ import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
-import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { SnackbarContent } from '@mui/material';
 import React, { useEffect, useState } from 'react';
-import PLayersDrawer from './components/settingSectoins/Drawer';
-import { io } from 'socket.io-client';
-import { Message } from './components/socket/Message';
+
 import { Redirect, useHistory } from "react-router-dom";
 import { useDispatch, useSelector } from 'react-redux';
 import useWindowSize from "@rooks/use-window-size"
@@ -30,8 +26,6 @@ import Chat from './components/socket/Chat';
 
 
 export default function Game({socket}) {
-  const [messages, setMessages] = useState([]);
-  const [players, setPlayers] = useState([]);
   const [opponentName, setOpponentName] = useState('');
   const [timer, setTimer] = useState('');
   const [timeOut, setTimeOut] = useState(false);
