@@ -350,7 +350,8 @@ async def game_request(sid,  player_x_name, player_o_name, role):
     name_index = names_list.index(player_o_name)
     player_o = players[name_index]
     await sio_server.emit('gameRequest', {"player_x_name":player_x_name, "player_o_name":player_o_name, "role":role}, to=player_o["sid"])
-
+    # await sio_server.emit('requestWainting', player_o_name , to=sid)
+    return player_o_name
 @sio_server.event
 async def decline_request(sid,  player_x_name):
     global players
@@ -512,6 +513,7 @@ async def leave_room(sid, user):
     player['player_won'] = False
     player['player_lost'] = False
     player['player_draw'] = False
+    player['level'] = 1
     players[name_index] = player
     users_collection.update_one({"username" : username}, {"$set" : player})
     await sio_server.emit('setPlayers', players)
@@ -576,6 +578,7 @@ async def player_logged_out(sid, user):
         player['player_won'] = False
         player['player_lost'] = False
         player['player_draw'] = False
+        player['level'] = 1
         users_collection.update_one({"username" : username}, {"$set" : player})
         names_list.pop(name_index)
         players.pop(name_index)
@@ -600,6 +603,7 @@ async def leave_other_player(sid, player_name):
     player['player_won'] = False
     player['player_lost'] = False
     player['player_draw'] = False
+    player['level'] = 1
     players[name_index] = player
     users_collection.update_one({"username" : player_name}, {"$set" : player})
     await sio_server.emit('setPlayers', players)
@@ -673,6 +677,14 @@ async def declare_draw(sid, player_name):
     name_index = names_list.index(player_name)
     player = players[name_index]
     await sio_server.emit('declareDraw', to=player['room_number'])
+
+@sio_server.event
+async def get_user_level(sid, player_name):
+    global players
+    global names_list
+    name_index = names_list.index(player_name)
+    player = players[name_index]
+    return player['level']
 
 @sio_server.event
 async def set_player_draw(sid, username):

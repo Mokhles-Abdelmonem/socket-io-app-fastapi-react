@@ -30,25 +30,27 @@ export default function PLayersDrawer({allPlayers, currentPlayer, socket}) {
               return {
                 label: `${role} role`,
                 onClick: () => {
-                  socket.emit('game_request', currentPlayer.username, targetPlayer, role)
-                  localStorage.setItem('hanging_request', targetPlayer)
-                  confirmAlert({
-                    title: 'Confirm game request',
-                    message: `Waiting ${targetPlayer} response`,
-                    buttons: [
-                      {
-                        label: 'Cancel',
-                        onClick: () => {
-                          localStorage.removeItem('hanging_request');
-                          socket.emit('cancel_request', targetPlayer);
+                  socket.emit('game_request', currentPlayer.username, targetPlayer, role, (tarPLayer) => {
+                    localStorage.setItem('hanging_request', targetPlayer)
+                    confirmAlert({
+                      title: 'Confirm game request',
+                      message: `Waiting ${targetPlayer} response`,
+                      buttons: [
+                        {
+                          label: 'Cancel',
+                          onClick: () => {
+                            localStorage.removeItem('hanging_request');
+                            socket.emit('cancel_request', targetPlayer);
+                          }
                         }
-                      }
-                    ],
-                    onClickOutside: () => {
-                      localStorage.removeItem('hanging_request');
-                      socket.emit('cancel_request', targetPlayer);
-                    },
-                  });
+                      ],
+                      onClickOutside: () => {
+                        localStorage.removeItem('hanging_request');
+                        socket.emit('cancel_request', targetPlayer);
+                      },
+                    });
+                  
+                  }); 
                 }
               }
             });

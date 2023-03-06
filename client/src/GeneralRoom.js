@@ -118,13 +118,14 @@ export default function GeneralRoom({socket}) {
       localStorage.setItem('hanging_response', data.player_x_name)
       confirmAlert({
         title: 'Confirm game request',
-        message: `${data.player_x_name} Requesting a game with role ${data.role}`,
+        message: `${data.player_x_name} Requesting a game with role ${data.role} 
+        (role number) is the number of winning required to get next level`,
         buttons: [
           {
             label: 'Yes',
             onClick: () => {
               localStorage.removeItem('hanging_response');
-              socket.emit('join_room', data.player_x_name, data.player_o_name,(result) => {
+              socket.emit('join_room', data.player_x_name, data.player_o_name, data.role, (result) => {
                 const player_x = result[0];
                 const player_o = result[1];
                 setOpponentName(data.player_x_name);
@@ -197,6 +198,32 @@ export default function GeneralRoom({socket}) {
       ]
     });
   });
+
+
+  socket.on('requestWainting', (targetPlayer) => {
+    localStorage.setItem('hanging_request', targetPlayer)
+    confirmAlert({
+      title: 'Confirm game request',
+      message: `Waiting ${targetPlayer} response`,
+      buttons: [
+        {
+          label: 'Cancel',
+          onClick: () => {
+            localStorage.removeItem('hanging_request');
+            socket.emit('cancel_request', targetPlayer);
+          }
+        }
+      ],
+      onClickOutside: () => {
+        localStorage.removeItem('hanging_request');
+        socket.emit('cancel_request', targetPlayer);
+      },
+    });
+  });
+
+
+
+
 
   socket.on('requestCanceled', () => {
     localStorage.removeItem('hanging_response');

@@ -15,12 +15,10 @@ import SendIcon from '@mui/icons-material/Send';
 import { Message } from "./Message";
 
 
-export default function Chat({socket}) {
+export default function Chat({socket, level}) {
   const [messages, setMessages] = useState([]);
   const user = useSelector(state => state.auth.user);
   const [message, setMessage] = useState('');
-  const [Level, setLevel] = useState(0);
-  var userLevel = 0 
 
 
   useEffect(() => {
@@ -30,10 +28,6 @@ export default function Chat({socket}) {
         setMessages(result);
       }
     });
-
-    
-    setLevel(user.level)
-    console.log(userLevel)
   }
     
     socket.on('chatInRoom', (messages) => {
@@ -62,7 +56,7 @@ export default function Chat({socket}) {
 
 
                 <Box sx={{ display: 'flex', alignItems: 'flex-end' }}>
-                {Level > 1 ? 
+                {level > 1 ? 
                 (
                   <form>
                   <AccountCircle sx={{ color: 'action.active', mr: 1, my: 0.5 }} />
@@ -99,7 +93,7 @@ export default function Chat({socket}) {
                 ):(
                   <Typography>
                     you are a level 1 player
-                    win 3 games to get the next level
+                    win games in role number to get the next level
                     and be able to chat
                   </Typography>
                 )}

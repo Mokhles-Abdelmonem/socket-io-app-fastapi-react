@@ -45,6 +45,9 @@ export default function Game({socket}) {
   const { innerWidth, innerHeight, outerHeight, outerWidth } = useWindowSize();
   let browserHistory = useHistory();
 
+  const [level, setLevel] = useState(0);
+
+
   const leaveAction  = () => {
       if (user) {
         if (playerWon || playerLost || playerDraw){
@@ -200,6 +203,11 @@ export default function Game({socket}) {
       setTimeOut(false);
       setCurrentMove(0);
       setHistory([Array(9).fill(null)]);
+      socket.emit('get_user_level', user.username ,(level) => {
+        if (level){
+          setLevel(level)
+        }
+      });
     });
 
     socket.on('playerWon', (data) => {
@@ -334,6 +342,7 @@ export default function Game({socket}) {
         <Grid item xs={6} md={4}>
           <Chat
           socket={socket}
+          level={level}
           />
         </Grid>
         <Grid item xs={6} md={8}>
