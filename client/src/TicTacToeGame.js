@@ -152,7 +152,14 @@ export default function Game({socket}) {
     }
   }
 
-
+  function getUser (){
+    socket.emit('get_user', (player) => {
+      dispatch({
+        type: LOAD_USER_SUCCESS,
+        payload: {user: player}
+      });
+    });
+  }
 
   useEffect(() => {
     if (user){
@@ -167,6 +174,8 @@ export default function Game({socket}) {
         setPlayerWon(currentPlayer.player_won);
         setPlayerLost(currentPlayer.player_lost);
         setPlayerDraw(currentPlayer.player_draw);
+        setLevel(currentPlayer.level)
+
       });
       socket.emit('get_history', user.username ,(result) => {
         
@@ -273,6 +282,9 @@ export default function Game({socket}) {
 
 
     socket.on('noteOpponentWon', () => {
+      if (!user){
+        getUser();
+      }
       confirmAlert({
         title: 'Congrates you won',
         message: `your opponent leaved the game , you daclared as winner`,
@@ -304,6 +316,9 @@ export default function Game({socket}) {
 
 
     socket.on('notePlayerLeft', () => {
+      if (!user){
+        getUser();
+      }
       socket.emit('leave_other_player', user.username, (player) => {
         dispatch({
           type: LOAD_USER_SUCCESS,

@@ -35,8 +35,9 @@ async def countdown_x(player_name, room, opponent_name , player_who_clicked ):
     global players
     global names_list
     global timer_switch
-    timer_switch[room][2] = True
+    global clients
 
+    timer_switch[room][2] = True
     x_time = timer_switch[room][0]
     x_turn = timer_switch[room][2]
     player_won = timer_switch[room][3]
@@ -59,7 +60,13 @@ async def countdown_x(player_name, room, opponent_name , player_who_clicked ):
             x_time -= 1
             if x_time < 0:
                 await sio_server.emit('TimeOut', to=room)
-                await sio_server.emit('playerWon', {"player_name":player_o['username'], "opponent_name":player_x['username']}, to=player_o['sid'])
+                if player_o['sid'] in clients:
+                    sid = player_o['sid']
+                elif player_x['sid'] in players:
+                    sid = player_x['sid']
+                else:
+                    sid = player_o['room_number']
+                await sio_server.emit('playerWon', {"player_name":player_o['username'], "opponent_name":player_x['username']}, to=player_o['room_number'])
             x_turn = timer_switch[room][2]
             player_won = timer_switch[room][3]
         else:
@@ -88,19 +95,38 @@ async def countdown_o(player_name, room, opponent_name):
                 name_index = names_list.index(player_name)
                 player = players[name_index]
                 await sio_server.emit('TimeOut', to=room)
-                await sio_server.emit('playerWon',{"player_name":player['username'], "opponent_name":opponent_name},  to=player['sid'])
+                if player['sid'] in clients:
+                    sid = player['sid']
+                elif opponent['sid'] in players:
+                    sid = opponent['sid']
+                else:
+                    sid = player['room_number']
+                await sio_server.emit('playerWon', {"player_name":player_name, "opponent_name":opponent_name}, to=player['room_number'])
             x_turn = timer_switch[room][2]
             player_won = timer_switch[room][3]
         else:
             x_turn = False
         
 
+def get_user_db(username):
+    user = users_collection.find_one({"username":username})
+    return user
+
+def get_player(player_name):
+    global players
+    global names_list
+    if player_name in names_list:
+        name_index = names_list.index(player_name)
+        return players[name_index]
+    return False
+
+
 
 
 async def countdown_disconnected_user(user):
     global players
     global names_list
-    time = 2
+    time = 15
     connected = False
     opponent_name = ''
     username = user["username"]
@@ -110,22 +136,22 @@ async def countdown_disconnected_user(user):
         for player_name in player_list:
             if player_name != username:
                 opponent_name = player_name
-    if opponent_name in names_list:
-        opponent_index = names_list.index(opponent_name)
-        opponent = players[opponent_index]
-        while time and not connected:
-            await sio_server.sleep(1)
-            time -= 1
-            if time == 0:
-                if user['in_room']:
-                    if not user['player_draw'] or not user['player_lost'] or not user['player_won']:
-                        await sio_server.emit('declareWinner', {'winner': opponent_name, 'roomNumber':player_room})
-                        await sio_server.emit('congrateWinner', opponent, to=player_room)
-                        await sio_server.emit('noteOpponentWon', to=player_room)
-                await sio_server.emit('setDisconnectedPlayer', username, to=player_room)
-                await sio_server.emit('notePlayerLeft', to=opponent['sid'])
-            user = await users_collection.find_one({"username":username})
-            connected = user['connected']
+
+    while time and not connected:
+        await sio_server.sleep(1)
+        time -= 1
+        player = get_player(username)
+        opponent = get_player(opponent_name)
+        if time == 0:        
+            if player_list:
+                if not opponent['player_draw'] and not opponent['player_lost'] and not opponent['player_won']:
+                    await sio_server.emit('declareWinner', {'winner': opponent_name, 'roomNumber':opponent["room_number"]})
+                    await sio_server.emit('noteOpponentWon', to=opponent['sid'])
+                    await sio_server.emit('congrateWinner', opponent, to=opponent['sid'])
+            await sio_server.emit('setDisconnectedPlayer', username, to=opponent['sid'])
+            await sio_server.emit('notePlayerLeft', to=opponent['sid'])
+        player = await users_collection.find_one({"username":username})
+        connected = player['connected']
 
 
 
@@ -207,9 +233,6 @@ async def get_messages(sid, localName):
     global messages 
     return messages
 
-@sio_server.event
-async def test(sid):
-    print("Test ____________________________________________________")
 
 
 @sio_server.event
@@ -339,6 +362,7 @@ async def stop_time(sid, room, opponent_name):
     player = players[name_index]
     global timer_switch
     timer_switch[room][3] = True
+    print("timer stoped")
     await sio_server.emit('stopTimer', to=room)
 
 
@@ -514,8 +538,9 @@ async def leave_room(sid, user):
     player['player_lost'] = False
     player['player_draw'] = False
     player['level'] = 1
-    player['win_number'] = 0
+    player['win_number'] = 1
     players[name_index] = player
+    print("room_dict after pop", room_dict)
     users_collection.update_one({"username" : username}, {"$set" : player})
     await sio_server.emit('setPlayers', players)
     return {"player": player}
@@ -581,7 +606,7 @@ async def player_logged_out(sid, user):
         player['player_lost'] = False
         player['player_draw'] = False
         player['level'] = 1
-        player['win_number'] = 0
+        player['win_number'] = 1
         users_collection.update_one({"username" : username}, {"$set" : player})
         names_list.pop(name_index)
         players.pop(name_index)
@@ -598,8 +623,8 @@ async def leave_other_player(sid, player_name):
     name_index = names_list.index(player_name)
     player = players[name_index]
     room = player['room_number']
-    sio_server.leave_room(sid, room)
-    sio_server.enter_room(sid, 'general_room')
+    sio_server.leave_room(player["sid"], room)
+    sio_server.enter_room(player["sid"], 'general_room')
     player['in_room'] = False
     player['side'] = ''
     player['room_number'] = None
@@ -607,8 +632,9 @@ async def leave_other_player(sid, player_name):
     player['player_lost'] = False
     player['player_draw'] = False
     player['level'] = 1
-    player['win_number'] = 0
+    player['win_number'] = 1
     players[name_index] = player
+    room_dict.pop(room)
     users_collection.update_one({"username" : player_name}, {"$set" : player})
     await sio_server.emit('setPlayers', players)
     return player
@@ -656,7 +682,7 @@ async def declare_winner(sid, winner, opponent_name):
         if not contain_str:
             room_number = number
     win_number = player.get('win_number')
-    role = role_dict.get(room_number)
+    role = role_dict.get(player['room_number'])
     if win_number:
         player['win_number'] += 1
         player['level'] = int(player['win_number'] / role) + 1
@@ -689,6 +715,12 @@ async def get_user_level(sid, player_name):
     name_index = names_list.index(player_name)
     player = players[name_index]
     return player['level']
+
+
+@sio_server.event
+async def get_user(sid):
+    user = users_collection.find_one({"sid":sid})
+    return user
 
 @sio_server.event
 async def set_player_draw(sid, username):
