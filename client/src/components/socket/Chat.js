@@ -56,10 +56,14 @@ export default function Chat({socket, level}) {
 
 
                 <Box sx={{ display: 'flex', alignItems: 'flex-end' }}>
+
                 {level > 1 ? 
                 (
                   <form>
                   <AccountCircle sx={{ color: 'action.active', mr: 1, my: 0.5 }} />
+                    <span>
+                      level {level}
+                    </span>
                     <TextField 
                     id="input-with-message" 
                     label="send message" 
@@ -92,7 +96,7 @@ export default function Chat({socket, level}) {
     
                 ):(
                   <Typography>
-                    you are a level 1 player
+                    you are a level {level} player
                     win games in role number to get the next level
                     and be able to chat
                   </Typography>

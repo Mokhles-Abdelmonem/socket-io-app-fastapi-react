@@ -282,9 +282,6 @@ export default function Game({socket}) {
 
 
     socket.on('noteOpponentWon', () => {
-      if (!user){
-        getUser();
-      }
       confirmAlert({
         title: 'Congrates you won',
         message: `your opponent leaved the game , you daclared as winner`,
@@ -316,9 +313,6 @@ export default function Game({socket}) {
 
 
     socket.on('notePlayerLeft', () => {
-      if (!user){
-        getUser();
-      }
       socket.emit('leave_other_player', user.username, (player) => {
         dispatch({
           type: LOAD_USER_SUCCESS,
