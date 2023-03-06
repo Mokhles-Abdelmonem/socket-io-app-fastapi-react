@@ -2,9 +2,8 @@ from typing import Optional
 
 
 from fastapi.param_functions import Form
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Union
-
 
 class RegisterJson(BaseModel):
     """
@@ -72,4 +71,4 @@ class MessageJson(BaseModel):
 class RoleJson(BaseModel):
     """
     """
-    role_number: int
+    role_number: int = Field(ge=1)

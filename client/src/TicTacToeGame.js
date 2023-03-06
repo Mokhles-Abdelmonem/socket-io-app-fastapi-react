@@ -203,11 +203,13 @@ export default function Game({socket}) {
       setTimeOut(false);
       setCurrentMove(0);
       setHistory([Array(9).fill(null)]);
-      socket.emit('get_user_level', user.username ,(level) => {
-        if (level){
-          setLevel(level)
-        }
-      });
+      if(user){
+        socket.emit('get_user_level', user.username ,(level) => {
+          if (level){
+            setLevel(level)
+          }
+        });
+      }
     });
 
     socket.on('playerWon', (data) => {

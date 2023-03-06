@@ -514,6 +514,7 @@ async def leave_room(sid, user):
     player['player_lost'] = False
     player['player_draw'] = False
     player['level'] = 1
+    player['win_number'] = 0
     players[name_index] = player
     users_collection.update_one({"username" : username}, {"$set" : player})
     await sio_server.emit('setPlayers', players)
@@ -542,6 +543,7 @@ async def player_left_in_game(sid, opponent_name):
     room_in_timer = timer_switch.get(room)
     if room_in_timer:
         room_in_timer[3] = True
+    users_collection.update_one({"username" : opponent_name}, {"$set" : player})
     await sio_server.emit('declareWinner', {'winner': opponent_name, 'roomNumber':room})
     await sio_server.emit('congrateWinner', player, to=player['sid'])
     await sio_server.emit('noteOpponentWon', to=player['sid'])
@@ -579,6 +581,7 @@ async def player_logged_out(sid, user):
         player['player_lost'] = False
         player['player_draw'] = False
         player['level'] = 1
+        player['win_number'] = 0
         users_collection.update_one({"username" : username}, {"$set" : player})
         names_list.pop(name_index)
         players.pop(name_index)
@@ -604,6 +607,7 @@ async def leave_other_player(sid, player_name):
     player['player_lost'] = False
     player['player_draw'] = False
     player['level'] = 1
+    player['win_number'] = 0
     players[name_index] = player
     users_collection.update_one({"username" : player_name}, {"$set" : player})
     await sio_server.emit('setPlayers', players)
@@ -709,8 +713,8 @@ async def rematch_game(sid, player_name, opponent_name):
     global history
     name_index = names_list.index(player_name)
     player = players[name_index]
-    name_index = names_list.index(opponent_name)
-    opponent = players[name_index]
+    opponent_index = names_list.index(opponent_name)
+    opponent = players[opponent_index]
     player['player_lost'] = False
     player['player_won'] = False
     player['player_draw'] = False
