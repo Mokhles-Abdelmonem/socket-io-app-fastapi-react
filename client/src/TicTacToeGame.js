@@ -38,6 +38,7 @@ export default function Game({socket}) {
   const [currentMove, setCurrentMove] = useState(0);
   const xIsNext = currentMove % 2 === 0;
   const currentSquares = history[currentMove];
+  const [board, setBoard] = useState([Array(9).fill(null)]);
 
 
   const user = useSelector(state => state.auth.user);
@@ -95,61 +96,9 @@ export default function Game({socket}) {
   }
 }
 
-
-
-  
-  function handlePlay(nextSquares) {
-    const nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
-    const CMove = nextHistory.length - 1
-    socket.emit('set_history', user.username, nextHistory, CMove);
-    setHistory(nextHistory);
-    setCurrentMove(CMove);
-    socket.emit('handelPlay', user.room_number, nextHistory, CMove);
-  }
   const squares = currentSquares
-  function handleClick(i, apiPlayer=false) {
-
-    var roomHistory = apiPlayer ? apiPlayer.room_hestory : [] ;
-    var apiSquares = apiPlayer? roomHistory[currentMove] : squares;
-
-    
-    if (calculateWinner(apiSquares) || apiSquares[i] || timeOut ) {
-      return;
-    }
-    const nextSquares = apiSquares.slice();
-
-
-    var gamer = apiPlayer ? apiPlayer : user ;
-    var opponent = apiPlayer ? apiPlayer.opponent : opponentName ;
-
-
-    if (xIsNext) {
-      if (gamer.side === 'O') {
-        return;
-      }
-      nextSquares[i] = 'X';
-      socket.emit('switch_timer', gamer.room_number, gamer.username, opponent, 'O')
-    } else {
-      if (gamer.side === 'X') {
-        return;
-      }
-      nextSquares[i] = 'O';
-      socket.emit('switch_timer', gamer.room_number, gamer.username, opponent, 'X')
-    }
-    handlePlay(nextSquares);
-    const winner = calculateWinner(nextSquares);
-    if (winner === 'X') {
-      socket.emit('declare_winner', gamer.username, opponent);
-      socket.emit('stop_time', gamer.room_number, opponent);
-    }
-    if (winner === 'O') {
-      socket.emit('declare_winner', gamer.username, opponent);
-      socket.emit('stop_time', gamer.room_number, opponent);
-    }
-    if (winner === 'tie') {
-      socket.emit('declare_draw', gamer.username);
-      socket.emit('stop_time', gamer.room_number, opponent);
-    }
+  function handleClick(i) {
+    socket.emit('handle_click', i, user, opponentName);
   }
 
   function getUser (){
@@ -177,20 +126,24 @@ export default function Game({socket}) {
         setLevel(currentPlayer.level)
 
       });
-      socket.emit('get_history', user.username ,(result) => {
+      // socket.emit('get_history', user.username ,(result) => {
         
-        if (result){
-          const lHistory = result[0];
-          const move = result[1];
-          setHistory(lHistory);
-          setCurrentMove(move);
-        }
-      });
+      //   if (result){
+      //     const lHistory = result[0];
+      //     const move = result[1];
+      //     setHistory(lHistory);
+      //     setCurrentMove(move);
+      //   }
+      // });
       if (!user.in_room) {
         return <Redirect to="/dashboard" />
       }
     }
 
+
+    socket.on('setBoard', (res) => {
+      setBoard(res);
+    });
 
     socket.on('setTimer', (timer) => {
       setTimer(timer);
@@ -212,6 +165,7 @@ export default function Game({socket}) {
       setTimeOut(false);
       setCurrentMove(0);
       setHistory([Array(9).fill(null)]);
+      setBoard([Array(9).fill(null)]);
       if(user){
         socket.emit('get_user_level', user.username ,(level) => {
           if (level){
@@ -444,7 +398,7 @@ export default function Game({socket}) {
                   <Box sx={{ minHeight: '50vh' }}>
                     <div className='game'>
                       <Board
-                      squares={squares}
+                      squares={board}
                       handleClick={handleClick}
                       />
                     </div>

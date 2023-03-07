@@ -6,6 +6,7 @@ import { Players } from './Players';
 import { confirmAlert } from 'react-confirm-alert'; // Import
 import 'react-confirm-alert/src/react-confirm-alert.css'; // Import css
 
+import { useDispatch, useSelector } from 'react-redux';
 
 
 
@@ -26,36 +27,38 @@ export const Chat = () => {
   const [playerWon, setPlayerWon] = useState(false);
 
   const [history, setHistory] = useState([Array(9).fill(null)]);
+  const [Board, setBoard] = useState([Array(9).fill(null)]);
   const [currentMove, setCurrentMove] = useState(0);
   const xIsNext = currentMove % 2 === 0;
   const currentSquares = history[currentMove];
+  const user = useSelector(state => state.auth.user);
   
   
   const localName = localStorage.getItem('username');
 
+  
   function handlePlay(nextSquares) {
     const nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
-    socket.emit('set_history', localName, nextHistory);
-    setHistory(nextHistory);
     const CMove = nextHistory.length - 1
+    socket.emit('set_history', user.username, nextHistory, CMove);
+    setHistory(nextHistory);
     setCurrentMove(CMove);
-    socket.emit('handelPlay', player.room_number, nextHistory, CMove);
+    socket.emit('handelPlay', user.room_number, nextHistory, CMove);
   }
   const squares = currentSquares
-  function handleClick(i, apiPlayer=false) {
-
-    var roomHistory = apiPlayer ? apiPlayer.room_hestory : [] ;
-    var apiSquares = apiPlayer? roomHistory[currentMove] : squares;
-
-    
-    if (calculateWinner(apiSquares) || apiSquares[i] || timeOut ) {
+  function handleClick(i) {
+    if (calculateWinner(squares) || squares[i] || timeOut ) {
       return;
     }
-    const nextSquares = apiSquares.slice();
-    console.log("nextSquares before", nextSquares)
 
-    var gamer = apiPlayer ? apiPlayer : player ;
-    var opponent = apiPlayer ? apiPlayer.opponent : opponentName ;
+
+
+
+    const nextSquares = squares.slice();
+
+
+    var gamer = user ;
+    var opponent = opponentName ;
 
 
     if (xIsNext) {
@@ -63,23 +66,26 @@ export const Chat = () => {
         return;
       }
       nextSquares[i] = 'X';
-      socket.emit('switch_timer', gamer.room_number, gamer.name, opponent, 'O')
+      socket.emit('switch_timer', gamer.room_number, gamer.username, opponent, 'O')
     } else {
       if (gamer.side === 'X') {
         return;
       }
       nextSquares[i] = 'O';
-      socket.emit('switch_timer', gamer.room_number, gamer.name, opponent, 'X')
+      socket.emit('switch_timer', gamer.room_number, gamer.username, opponent, 'X')
     }
-    console.log("nextSquares before", nextSquares)
     handlePlay(nextSquares);
     const winner = calculateWinner(nextSquares);
     if (winner === 'X') {
-      socket.emit('declare_winner', gamer.name);
+      socket.emit('declare_winner', gamer.username, opponent);
       socket.emit('stop_time', gamer.room_number, opponent);
     }
     if (winner === 'O') {
-      socket.emit('declare_winner', gamer.name);
+      socket.emit('declare_winner', gamer.username, opponent);
+      socket.emit('stop_time', gamer.room_number, opponent);
+    }
+    if (winner === 'tie') {
+      socket.emit('declare_draw', gamer.username);
       socket.emit('stop_time', gamer.room_number, opponent);
     }
   }
@@ -215,11 +221,11 @@ export const Chat = () => {
 
 
 
-    socket.emit('get_history', localName,(result) => {
-      if (result){
-        setHistory(Array(result));
-      }
-    });
+    // socket.emit('get_history', localName,(result) => {
+    //   if (result){
+    //     setHistory(Array(result));
+    //   }
+    // });
 
 
 

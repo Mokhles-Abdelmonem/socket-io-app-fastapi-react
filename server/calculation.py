@@ -16,30 +16,28 @@ def calculate_winner(squares):
             [a, b, c] = line
             if squares[a] and squares[a] == squares[b] and squares[b] == squares[c]:
                 return squares[a]
+        nulls = count_null(squares)
+        if not nulls:
+            return 'tie'
     return None
 
 
-initial_list = [None for i in range(9)]
+initial_squares = [None for i in range(9)]
 
-def submit_move(move):
-    global initial_list
-    counter = initial_list.count(None)
-    xIsNext = counter % 2 == 0
-    if xIsNext:
-        initial_list[move] = "O"
-    else :
-        initial_list[move] = "X"
-    return initial_list
+def player_turn(squares):
+    counter = count_null(squares)
+    return "O" if counter % 2 == 0 else "X"
 
-submit_move(1)
-submit_move(2)
-submit_move(4)
-submit_move(3)
-submit_move(7)
 
-print(int(3 / 3))
+
+def count_null(squares):
+    return squares.count(None)
+
+
+
+
 
 
 if __name__ == '__main__':
 
-    print(calculate_winner(initial_list))
+    print(calculate_winner(initial_squares))
