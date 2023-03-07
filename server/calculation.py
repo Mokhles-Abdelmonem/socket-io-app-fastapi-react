@@ -1,5 +1,5 @@
 
-lines = [
+roles = [
     [0, 1, 2],
     [3, 4, 5],
     [6, 7, 8],
@@ -9,10 +9,11 @@ lines = [
     [0, 4, 8],
     [2, 4, 6],
     ]
-def calculate_winner(squares):
+
+def calculate_winner(squares, roles):
 
     if squares:
-        for line in lines:
+        for line in roles:
             [a, b, c] = line
             if squares[a] and squares[a] == squares[b] and squares[b] == squares[c]:
                 return squares[a]

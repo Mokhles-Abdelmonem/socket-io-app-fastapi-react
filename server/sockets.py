@@ -3,7 +3,7 @@ import re
 import time
   
 # define the countdown func.
-from utiles import get_current_active_user, User , Depends, AuthJWT, users_collection, retrieve_roles
+from utiles import get_current_active_user, User , Depends, AuthJWT, users_collection, role_collection, retrieve_roles
 
 room_number = 0
 room_dict = {}
@@ -282,13 +282,15 @@ async def handle_click(sid, i , player, opponent_name):
     if not room_history:
         history[room]= [None for _ in range(9)]
         room_history = history.get(room)
-    winner = calculate_winner(room_history)
+    winning_number_role = role_dict[room]
+    role_obj = await role_collection.find_one({"winning_number": winning_number_role})
+    winner = calculate_winner(room_history, role_obj["roles"])
     side_turn = player_turn(room_history)
     if winner or room_history[i] or not player_time or player["side"] != side_turn :
         return
     await switch_timer_back(player, opponent_name, side_turn)
     room_history[i] = player['side']
-    winner = calculate_winner(room_history)
+    winner = calculate_winner(room_history, role_obj["roles"])
     if winner == 'tie':
         await stop_time_back(room)
         await sio_server.emit('declareDraw', to=room)

@@ -187,13 +187,14 @@ async def set_message(message: MessageJson, current_user: User = Depends(get_cur
 
 @app.post("/roles")
 async def set_role(role: RoleJson):
-    role_exist = await role_collection.find_one({"role_number": role.role_number})
+    role_exist = await role_collection.find_one({"winning_number": role.winning_number})
     if role_exist:
         return JSONResponse(
         status_code=409,
         content={"role": f"role already exist"},
     )
-    role_collection.insert_one({"role_number": role.role_number})
+    print(role.roles)
+    role_collection.insert_one({"winning_number": role.winning_number, "roles": role.roles})
     return role
 
 

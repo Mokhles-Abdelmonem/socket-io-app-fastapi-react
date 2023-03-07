@@ -71,4 +71,5 @@ class MessageJson(BaseModel):
 class RoleJson(BaseModel):
     """
     """
-    role_number: int = Field(ge=1)
+    winning_number: int = Field(ge=1)
+    roles: list[list[int]]

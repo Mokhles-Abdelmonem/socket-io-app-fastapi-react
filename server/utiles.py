@@ -135,5 +135,5 @@ async def retrieve_users():
 async def retrieve_roles():
     roles = []
     async for role in role_collection.find():
-        roles.append(role["role_number"])
+        roles.append(role["winning_number"])
     return roles
