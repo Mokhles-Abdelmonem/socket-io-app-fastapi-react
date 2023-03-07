@@ -1,6 +1,6 @@
 from typing import Optional
 
-
+from fastapi import Path
 from fastapi.param_functions import Form
 from pydantic import BaseModel, Field
 from typing import Union
@@ -72,4 +72,4 @@ class RoleJson(BaseModel):
     """
     """
     winning_number: int = Field(ge=1)
-    roles: list[list[int]]
+    roles: list[list[int]] 

@@ -187,13 +187,22 @@ async def set_message(message: MessageJson, current_user: User = Depends(get_cur
 
 @app.post("/roles")
 async def set_role(role: RoleJson):
-    role_exist = await role_collection.find_one({"winning_number": role.winning_number})
-    if role_exist:
+    roles = await role_collection.find_one({"winning_number": role.winning_number})
+    if roles:
         return JSONResponse(
         status_code=409,
         content={"role": f"role already exist"},
     )
-    print(role.roles)
+    for role_list in role.roles:
+        print(role_list)
+        for number in role_list:
+            print(type(number))
+            print(int)
+            if type(number) != int or number not in range(9):
+                return JSONResponse(
+                status_code=501,
+                content={"role": "Invalid role all roles must be integers and in range 0-8"},
+                )  
     role_collection.insert_one({"winning_number": role.winning_number, "roles": role.roles})
     return role
 
