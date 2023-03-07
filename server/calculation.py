@@ -1,22 +1,25 @@
 
-roles = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6],
-    ]
+# roles = [
+#     [0, 1, 2],
+#     [3, 4, 5],
+#     [6, 7, 8],
+#     [0, 3, 6],
+#     [1, 4, 7],
+#     [2, 5, 8],
+#     [0, 4, 8],
+#     [2, 4, 6],
+#     ]
 
 def calculate_winner(squares, roles):
 
     if squares:
         for line in roles:
-            [a, b, c] = line
-            if squares[a] and squares[a] == squares[b] and squares[b] == squares[c]:
-                return squares[a]
+            x_indexes = [index for index in line if squares[index] == 'X']
+            o_indexes = [index for index in line if squares[index] == 'O']
+            if x_indexes == line:
+                return 'X'
+            elif o_indexes == line:
+                return 'O'
         nulls = count_null(squares)
         if not nulls:
             return 'tie'

@@ -194,10 +194,7 @@ async def set_role(role: RoleJson):
         content={"role": f"role already exist"},
     )
     for role_list in role.roles:
-        print(role_list)
         for number in role_list:
-            print(type(number))
-            print(int)
             if type(number) != int or number not in range(9):
                 return JSONResponse(
                 status_code=501,

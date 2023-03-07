@@ -41,8 +41,6 @@ async def countdown_x(player_name, room, opponent_name , player_who_clicked ):
     x_time = timer_switch[room][0]
     x_turn = timer_switch[room][2]
     player_won = timer_switch[room][3]
-    print("x_turn before countdown")
-    print(x_turn)
     while x_turn and x_time >= 0 and not player_won:
         await sio_server.sleep(1)
         if opponent_name in names_list:
@@ -306,7 +304,6 @@ async def handle_click(sid, i , player, opponent_name):
 
 @sio_server.event
 async def add_user(sid, user):
-    print ("adding user: ", user)
     global players
     global names_list
     player_obj = {
@@ -606,7 +603,6 @@ async def leave_room(sid, user):
     player['level'] = 1
     player['win_number'] = 1
     players[name_index] = player
-    print("room_dict after pop", room_dict)
     users_collection.update_one({"username" : username}, {"$set" : player})
     await sio_server.emit('setPlayers', players)
     return {"player": player}
