@@ -1,6 +1,9 @@
 
-
-
+num = 0
+if num :
+    print("Number is zero")
+else:
+    print(0%2)
 
 
 # @app.get("/move/{user}/{move}")

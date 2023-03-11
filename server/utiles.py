@@ -67,7 +67,7 @@ def email_valid(s):
 
 
 def password_valid(s):
-   pat = "^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$"
+   pat = "^.{3,}$"
    if re.match(pat,s):
       return True
    return False

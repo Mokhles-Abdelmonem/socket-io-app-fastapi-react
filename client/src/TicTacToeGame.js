@@ -48,7 +48,19 @@ export default function Game({socket}) {
 
   const [level, setLevel] = useState(0);
 
-
+  let username; 
+  if(user === undefined || user === null || user.username === null || user.username === undefined){
+    socket.emit('get_user' ,(player) => {
+      dispatch({
+        type: LOAD_USER_SUCCESS,
+        payload: {user: player}
+        
+      });
+    username = player.username
+    });      
+  }else{
+    username = user.username
+  }
   const leaveAction  = () => {
       if (user) {
         if (playerWon || playerLost || playerDraw){
@@ -92,7 +104,7 @@ export default function Game({socket}) {
 
   const handelRemach  = () => {
     if (user) {
-      socket.emit('rematch_game', user.username, opponentName);
+      socket.emit('rematch_game', username, opponentName);
   }
 }
 
@@ -126,15 +138,11 @@ export default function Game({socket}) {
         setLevel(currentPlayer.level)
 
       });
-      // socket.emit('get_history', user.username ,(result) => {
-        
-      //   if (result){
-      //     const lHistory = result[0];
-      //     const move = result[1];
-      //     setHistory(lHistory);
-      //     setCurrentMove(move);
-      //   }
-      // });
+      socket.emit('get_board', user.username ,(result) => {
+        if (result){
+          setBoard(result);
+        }
+      });
       if (!user.in_room) {
         return <Redirect to="/dashboard" />
       }
@@ -167,7 +175,7 @@ export default function Game({socket}) {
       setHistory([Array(9).fill(null)]);
       setBoard([Array(9).fill(null)]);
       if(user){
-        socket.emit('get_user_level', user.username ,(level) => {
+        socket.emit('get_user_level', username ,(level) => {
           if (level){
             setLevel(level)
           }
@@ -188,6 +196,7 @@ export default function Game({socket}) {
 
     socket.on('congrateWinner', (player) => {
       setPlayerWon(true);
+      setLevel(player.level);
       dispatch({
         type: LOAD_USER_SUCCESS,
         payload: {user: player}
@@ -220,7 +229,17 @@ export default function Game({socket}) {
     });
     socket.on('declareDraw', () => {
       setPlayerDraw(true);
-      socket.emit('set_player_draw', user.username);
+      if(user === undefined && user === null){
+        socket.emit('get_user' ,(user) => {
+          dispatch({
+            type: LOAD_USER_SUCCESS,
+            payload: {user: user}
+            
+          });
+        });      
+      }else{
+        socket.emit('set_player_draw', username);
+      }
       confirmAlert({
         title: 'Tie ',
         message: `the game settled to draw, your can win next time`,
@@ -243,7 +262,7 @@ export default function Game({socket}) {
           {
             label: 'Ok',
             onClick: () => {
-              socket.emit('leave_other_player', user.username, (player) => {
+              socket.emit('leave_other_player', username, (player) => {
                 dispatch({
                   type: LOAD_USER_SUCCESS,
                   payload: {user: player}
@@ -254,7 +273,7 @@ export default function Game({socket}) {
           }
         ],
         onClickOutside: () => {
-          socket.emit('leave_other_player', user.username, (player) => {
+          socket.emit('leave_other_player', username, (player) => {
             dispatch({
               type: LOAD_USER_SUCCESS,
               payload: {user: player}
@@ -267,7 +286,7 @@ export default function Game({socket}) {
 
 
     socket.on('notePlayerLeft', () => {
-      socket.emit('leave_other_player', user.username, (player) => {
+      socket.emit('leave_other_player', username, (player) => {
         dispatch({
           type: LOAD_USER_SUCCESS,
           payload: {user: player}

@@ -74,7 +74,7 @@ export default function GeneralRoom({socket}) {
       setPlayers(data)
     });
     socket.on('pushToRoom', () => {
-      history.push("/tictactoe") 
+      history.push("/tictactoe");
     });
 
     if (user){
@@ -124,9 +124,11 @@ export default function GeneralRoom({socket}) {
           {
             label: 'Yes',
             onClick: () => {
+              console.log("onClick called >>>>>>>>>>>>>>>>>>>>>>>>>>> ");
               localStorage.removeItem('hanging_response');
               socket.emit('join_room', data.player_x_name, data.player_o_name, data.role, (result) => {
-                const player_x = result[0];
+                console.log("join_room emited >>>>>>>>>>>>>>>>>>>>>>>>>>> ");
+                
                 const player_o = result[1];
                 setOpponentName(data.player_x_name);
                 dispatch({
@@ -153,16 +155,17 @@ export default function GeneralRoom({socket}) {
     });
 
 
-    socket.on('setPlayer', (data) => {
+    socket.on('setPlayerToPlay', (data) => {
+      console.log("setPlayerToPlay called >>>>>>>>>>>>>>", data)
       localStorage.removeItem('hanging_request');
+      const player_x = data.player
+      const player_o = data.opponent
+      socket.emit('set_timer', player_x.room_number, player_x.username, player_o)
       dispatch({
         type: LOAD_USER_SUCCESS,
         payload: {user: data.player}
       });
       setOpponentName(data.opponent)
-      const player_x = data.player
-      const player_o = data.opponent
-      socket.emit('set_timer', player_x.room_number, player_x.username, player_o)
       confirmAlert({
         title: 'Accepted game request',
         message: `your turn as X your time to play`,

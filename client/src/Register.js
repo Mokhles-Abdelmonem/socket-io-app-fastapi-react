@@ -77,7 +77,11 @@ export default function SignUp() {
   if (typeof window !== 'undefined' && isAuthenticated){
     history.push('/')
   }
-  if (register_success){history.push('/login')}
+  if (register_success){
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+    history.push('/login');
+  }
   
   return (
     <ThemeProvider theme={theme}>
