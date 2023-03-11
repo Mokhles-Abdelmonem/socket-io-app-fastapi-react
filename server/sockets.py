@@ -618,8 +618,8 @@ async def leave_room(sid, user):
     player = players[name_index]
     room = player['room_number']
     sid = player['sid']
-    sio_server.leave_room(sid, room)
     sio_server.enter_room(sid, 'general_room')
+    sio_server.leave_room(sid, room)
     player['in_room'] = False
     player['side'] = ''
     player['room_number'] = None
@@ -714,8 +714,8 @@ async def leave_other_player(sid, player_name):
     name_index = names_list.index(player_name)
     player = players[name_index]
     room = player['room_number']
-    sio_server.leave_room(player["sid"], room)
     sio_server.enter_room(player["sid"], 'general_room')
+    sio_server.leave_room(player["sid"], room)
     player['in_room'] = False
     player['side'] = ''
     player['room_number'] = None
@@ -724,9 +724,10 @@ async def leave_other_player(sid, player_name):
     player['player_draw'] = False
     player['win_number'] = 0
     players[name_index] = player
-    room_dict.pop(room)
+    if room in room_dict.keys():
+        print('Room is  in room_dict')
+        room_dict.pop(room)
     users_collection.update_one({"username" : player_name}, {"$set" : player})
-    await sio_server.emit('setPlayers', players)
     return player
 
 
