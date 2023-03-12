@@ -681,6 +681,7 @@ async def player_left_room(sid, opponent_name):
     opponent = players[name_index]
     players[name_index] = opponent
     await sio_server.emit('notePlayerLeft', to=opponent['sid'])
+    await sio_server.emit('setPlayers', players)
 
 
 @sio_server.event
