@@ -61,6 +61,7 @@ async def countdown_x(player_name, room, opponent_name , player_who_clicked ):
             if x_time == -1:
                 await sio_server.emit('TimeOut', to=room)
                 await declare_winner_back(player_o['sid'], player_o, player_x['username'])
+                await stop_time_back(room)
             x_turn = timer_switch[room][2]
             player_won = timer_switch[room][3]
         else:
@@ -90,6 +91,7 @@ async def countdown_o(player_name, room, opponent_name):
                 player = players[name_index]
                 await sio_server.emit('TimeOut', to=room)
                 await declare_winner_back(player['sid'], player, opponent_name)
+                await stop_time_back(room)
             x_turn = timer_switch[room][2]
             player_won = timer_switch[room][3]
         else:
@@ -138,6 +140,7 @@ async def countdown_disconnected_user(user):
                     await sio_server.emit('congrateWinner', opponent, to=opponent['sid'])
             await sio_server.emit('setDisconnectedPlayer', username, to=opponent['sid'])
             await sio_server.emit('notePlayerLeft', to=opponent['sid'])
+            await stop_time_back(player_room)
         player = await users_collection.find_one({"username":username})
         connected = player['connected']
 
@@ -304,7 +307,9 @@ async def handle_click(sid, i , player, opponent_name):
     role_obj = await role_collection.find_one({"winning_number": winning_number_role})
     winner = calculate_winner(room_history, role_obj["roles"])
     side_turn = player_turn(room_history)
-    if winner or room_history[i] or not player_time or player["side"] != side_turn :
+    player_won = timer_switch[room][3]
+    print("player_won", player_won)
+    if winner or room_history[i] or not player_time or player["side"] != side_turn or player_won :
         return
     await switch_timer_back(player, opponent_name, side_turn)
     room_history[i] = player['side']
