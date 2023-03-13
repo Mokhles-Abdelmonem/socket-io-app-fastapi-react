@@ -41,6 +41,7 @@ export default function AdminSettings ({selectedPlayer}) {
       deleteUser(selectedPlayer).then((res) => {
         setAlertData(alertData =>({...alertData,...res,}))
       })
+      window.location.reload();
     };
     const onSubmit = async (values, actions) => {
       console.log("values submitted to Admin", selectedPlayer, values);
@@ -49,7 +50,7 @@ export default function AdminSettings ({selectedPlayer}) {
 
       setAlertData({...initialState})
       
-      dispatch(updateUsers(selectedPlayer, parseInt(values.level), values.toggle))
+      updateUsers(selectedPlayer, parseInt(values.level), values.toggle)
       .then((res) => setAlertData(alertData =>({...alertData,...res,})
       ));
 
@@ -97,7 +98,7 @@ export default function AdminSettings ({selectedPlayer}) {
                      type="checkbox"
                      name="toggle" 
                      />
-                     {`${isSubmitting.toggle}`}
+                      disable player
                     </label>
                   </Grid>
                 </Grid>

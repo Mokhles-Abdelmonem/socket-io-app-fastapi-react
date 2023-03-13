@@ -13,6 +13,7 @@ import { Redirect, useHistory } from "react-router-dom";
 
 import { useDispatch, useSelector } from 'react-redux';
 import { request_refresh } from './api/refresh';
+import AdminHeader from './components/AdminHeader';
 
 export default function Admin() {
   const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
@@ -44,6 +45,7 @@ export default function Admin() {
 
   return (
     <>
+      <AdminHeader/>
       <UsersDrawer
       users ={users}
       />

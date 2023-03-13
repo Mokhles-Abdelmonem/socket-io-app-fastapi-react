@@ -1,4 +1,3 @@
-
 const API_URL = process.env.REACT_APP_API_URL;
 
 
@@ -8,7 +7,7 @@ export async function updateUsers (username,level,disabled) {
         level,
         disabled
     });
-    console.log("body",body);
+
     try {
         const apiRes = await fetch(`${API_URL}/admin_update_users/${username}/`, {
             method: 'POST',
@@ -20,6 +19,7 @@ export async function updateUsers (username,level,disabled) {
             body: body
         });
         const res = await apiRes.json();
+        console.log("res",res);
         if (apiRes.status === 200) {
             return res;
         } else {
