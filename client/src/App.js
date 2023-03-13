@@ -15,6 +15,7 @@ import Game from './TicTacToeGame';
 import JoinButton from './components/socket/JoinButton';
 import GeneralRoom from './GeneralRoom';
 import { io } from 'socket.io-client';
+import Admin from './Admin';
 
 const socket = io(process.env.REACT_APP_API_URL, {
   path: process.env.REACT_APP_SOCKET_PATH,
@@ -45,6 +46,11 @@ export default function App(pageProps) {
           <LayoutComponent> 
             <Game socket={socket}/>
           </LayoutComponent>
+        </Route>
+        <Route path="/admin">
+
+            <Admin/>
+
         </Route>
         <Route path="/">
           <LayoutComponent> 

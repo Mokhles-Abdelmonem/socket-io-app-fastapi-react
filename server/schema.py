@@ -5,7 +5,8 @@ def ResponseModel(data, message):
         "message": message,
     }
 
-
+def ResponseUsersList(users, current_user) -> list:
+    return [user['username'] for user in users if user['username'] != current_user['username']]
 def user_helper(user) -> dict:
     return {
         "id": str(user["_id"]),

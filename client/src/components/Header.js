@@ -99,10 +99,17 @@ function Header() {
 
   const settingsLinks = (
     <>
-
-    {/* <Button href="/settings/account" variant="outlined" size="small">
+    {
+    user.is_admin ? 
+    (
+      <Button href="/admin" variant="outlined" size="small">
         Acount Settings
-    </Button> */}
+      </Button>
+    ):(
+      ''
+    )
+    }
+
     <Button onClick={logoutHandler} variant="outlined" size="small">
         logout
     </Button>

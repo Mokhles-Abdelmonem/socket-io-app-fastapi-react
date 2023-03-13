@@ -9,7 +9,6 @@ import { Redirect, useHistory } from "react-router-dom";
 
 const Layout = ({ children }) => {
     const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
-    const user = useSelector(state => state.auth.user);
     const dispatch = useDispatch();
     let history = useHistory();
 

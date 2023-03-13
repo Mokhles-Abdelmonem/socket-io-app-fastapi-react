@@ -15,7 +15,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
-from serializer import RegisterJson, LoginJson, MessageJson, RoleJson
+from serializer import RegisterJson, LoginJson, MessageJson, RoleJson, UpdatedUserJson
 import re
 from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import AuthJWTException
@@ -143,10 +143,12 @@ async def user_register(json_data: RegisterJson):
 async def read_users(current_user: User = Depends(get_current_active_user)):
     users = await retrieve_users()
     if users :
-        return ResponseModel(users, "Users retrieved successfully")
-    return ResponseModel(users, "Empty list returned")
+        return ResponseUsersList(users, current_user)
     
-
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content={"notfound": "Empty list returned"},
+        )
 
 @app.get("/users/me/", response_model=User)
 async def read_users_me(current_user: User = Depends(get_current_active_user)):
@@ -157,9 +159,38 @@ async def read_own_items(current_user: User = Depends(get_current_active_user)):
     return [{"item_id": "Foo", "owner": current_user['username']}]
 
 
+@app.post("/admin_update_users/{username}/")
+async def admin_update_users(username , updated_user: UpdatedUserJson, current_user: User = Depends(get_current_active_user)):
+    print ("admin_update_users")
+    if not current_user['is_admin']:
+        return JSONResponse(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        content={"error": "UNAUTHORIZED to update users"},
+    )
+    users_collection.update_one({"username" : username}, {"$set" : {"level":updated_user.level, "disabled":updated_user.disabled}})
 
 
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"success": "User successfully updated"},
+    )
 
+
+@app.delete("/admin_delete_users/{username}/")
+async def admin_update_users(username , current_user: User = Depends(get_current_active_user)):
+    print ("admin_delete_users")
+    if not current_user['is_admin']:
+        return JSONResponse(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        content={"error": "UNAUTHORIZED to delete users"},
+    )
+    users_collection.delete_one({"username" : username})
+
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"success": "User deleted "},
+    )
 
 
 @app.post("/message")

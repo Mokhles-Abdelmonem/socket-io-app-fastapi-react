@@ -37,6 +37,7 @@ class TokenData(BaseModel):
 class User(BaseModel):
     username: str
     email: Union[str, None] = None
+    is_admin: Union[bool, None] = False
     disabled: Union[bool, None] = None
     joined: Union[bool, None] = None
     in_room: Union[bool, None] = None
@@ -65,6 +66,12 @@ class MessageJson(BaseModel):
     """
     text: Union[str, None] = None
 
+
+class UpdatedUserJson(BaseModel):
+    """
+    """
+    level: int  | None = None
+    disabled: bool | None = None
 
 
 

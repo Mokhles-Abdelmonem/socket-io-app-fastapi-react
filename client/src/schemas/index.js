@@ -71,6 +71,15 @@ export const profileSchema = yup.object().shape({
 });
 
 
+export const updateUserSchema = yup.object().shape({
+
+  level: yup
+    .number().positive().integer().required("Required"),
+    toggle: yup
+    .bool()
+});
+
+
 
 export const passwordSchema = yup.object().shape({
 
