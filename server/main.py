@@ -193,6 +193,7 @@ async def admin_update_users(username , updated_user: UpdatedUserJson, current_u
         else:
             await sio_server.emit('logeUserOutByName',username)   
         updated_user_fields = {
+            "joined" : False,
             "in_room" : False,
             "room_number" : None,
             "player_won" : False,
