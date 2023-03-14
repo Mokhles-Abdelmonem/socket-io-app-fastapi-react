@@ -37,6 +37,7 @@ export default function AdminSettings ({selectedPlayer}) {
     } = alertData;
 
     const handleDeletePlayer = async function(){
+      document.getElementById(`${selectedPlayer}`).disabled = true;
       console.log('delete player clicked')
       deleteUser(selectedPlayer).then((res) => {
         setAlertData(alertData =>({...alertData,...res,}))
@@ -140,6 +141,7 @@ export default function AdminSettings ({selectedPlayer}) {
                     type="submit"
                     variant="contained"
                     color='error'
+                    id={selectedPlayer}
                     sx={{ mt: 3, mb: 1 }}
                     onClick={handleDeletePlayer}
                   >

@@ -8,6 +8,7 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import { useEffect, useState } from 'react';
 import { confirmAlert } from 'react-confirm-alert'; 
 import AdminSettings from './adminSettings';
+import Grid from '@mui/material/Grid';
 
 
 export default function UsersDrawer({users}) {
@@ -20,27 +21,34 @@ export default function UsersDrawer({users}) {
 
   return (
   <>
-    <Box sx={{ width: '100%', hight: 360, maxWidth: 360, bgcolor: 'background.paper' }}>
-      <List component="nav" aria-label="main mailbox folders">
-        {users.map((username, index) => (
-          <ListItemButton
-            key={index}
-            onClick={(event) => handleListItemClick(event, username)}
-          >
-            <ListItemIcon>
-              <PersonOutlineIcon />
-            </ListItemIcon>
-            <ListItemText 
-            primary={username}
-            id={username}
-            />
-          </ListItemButton>
-        ))}
-      </List>
-    </Box>
-    <AdminSettings
-    selectedPlayer={selectedPlayer}
-    />
+    <Grid container spacing={2} columns={16}>
+      <Grid item xs={6}>
+        <Box sx={{ width: '100%', hight: 360, maxWidth: 360, bgcolor: 'background.paper' }}>
+          <List component="nav" aria-label="main mailbox folders">
+            {users.map((username, index) => (
+              <ListItemButton
+                key={index}
+                onClick={(event) => handleListItemClick(event, username)}
+              >
+                <ListItemIcon>
+                  <PersonOutlineIcon />
+                </ListItemIcon>
+                <ListItemText 
+                primary={username}
+                id={username}
+                />
+              </ListItemButton>
+            ))}
+          </List>
+        </Box>
+      </Grid>
+      <Grid item xs={8}>
+        <AdminSettings
+        selectedPlayer={selectedPlayer}
+        />
+      </Grid>
+    </Grid>
+
   </>
   );
 }
