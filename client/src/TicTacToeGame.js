@@ -148,7 +148,14 @@ export default function Game({socket}) {
       }
     }
 
-
+    socket.on('logeUserOutFromRoom',  (opponent_name)  => {
+      socket.emit('player_disabled_in_game', opponent_name);
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      window.location.reload();
+  
+  });
+  
     socket.on('setBoard', (res) => {
       setBoard(res);
     });
@@ -205,9 +212,7 @@ export default function Game({socket}) {
 
 
     socket.on('setDisconnectedPlayer', (username) => {
-      console.log('setDisconnectedPlayer', username)
       socket.emit('set_disconnected_player', username);
-
     });
     socket.on('noteOpponent', (player) => {
       setPlayerLost(true);

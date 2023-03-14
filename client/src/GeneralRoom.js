@@ -132,10 +132,8 @@ export default function GeneralRoom({socket}) {
           {
             label: 'Yes',
             onClick: () => {
-              console.log("onClick called >>>>>>>>>>>>>>>>>>>>>>>>>>> ");
               localStorage.removeItem('hanging_response');
               socket.emit('join_room', data.player_x_name, data.player_o_name, data.role, (result) => {
-                console.log("join_room emited >>>>>>>>>>>>>>>>>>>>>>>>>>> ");
                 
                 const player_o = result[1];
                 setOpponentName(data.player_x_name);

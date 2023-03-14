@@ -672,6 +672,41 @@ async def player_left_in_game(sid, opponent_name):
 
 
 
+
+@sio_server.event
+async def player_disabled_in_game(sid, opponent_name):
+    global names_list
+    global players
+    global room_number
+    global timer_switch
+    opponent_index = names_list.index(opponent_name)
+    player = players[opponent_index]
+    win_number = player.get('win_number')
+    player_level = player.get('level')
+    if not player_level:
+        player['level'] = 1
+    room = player['room_number']
+    role = role_dict.get(room)
+    if win_number != None:
+        if win_number >= 0: 
+            player['win_number'] += 1
+            if player['win_number'] != 0:
+                if player['win_number'] % role == 0 :
+                    player['level'] += 1
+    else:
+        player['win_number'] = 0
+    player['player_won'] = True
+    room_in_timer = timer_switch.get(room)
+    if room_in_timer:
+        room_in_timer[3] = True
+    users_collection.update_one({"username" : opponent_name}, {"$set" : player})
+    await sio_server.emit('declareWinner', {'winner': opponent_name, 'roomNumber':room})
+    await sio_server.emit('congrateWinner', player, to=player['sid'])
+    await sio_server.emit('noteOpponentWon', to=player['sid'])
+
+
+
+
 @sio_server.event
 async def player_left_room(sid, opponent_name):
     global names_list
