@@ -177,10 +177,15 @@ async def admin_update_users(username , updated_user: UpdatedUserJson, current_u
         if sid:
             in_room = user.get('in_room')
             if in_room:
-                print ("user in_room", user)
                 room = user['room_number']
                 await stop_time_back(room)
-                opponent = await users_collection.find_one({"room_number" : room})
+                players_in_room = users_collection.find({"room_number" : room})
+                print ("players_in_room >>>>>>>>>>>>>>>>>>>", players_in_room)
+                async for player in players_in_room :
+                    if player['username'] != username :
+                        opponent = player 
+                print ("opponent >>>>>>>>>>>>>>>>>>>", opponent)
+
                 await sio_server.emit('logeUserOutFromRoom', opponent["username"], to=sid)
             else:
                 await sio_server.emit('logeUserOut', to=sid)
@@ -198,10 +203,9 @@ async def admin_update_users(username , updated_user: UpdatedUserJson, current_u
             "level":updated_user.level,
             "disabled":updated_user.disabled
             }
-        
-        
-    users_collection.update_one({"username" : username}, {"$set" : updated_user_fields})
 
+    users_collection.update_one({"username" : username}, {"$set" : updated_user_fields})
+    user = await users_collection.find_one({"username" : username})
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -211,7 +215,7 @@ async def admin_update_users(username , updated_user: UpdatedUserJson, current_u
 
 @app.delete("/admin_delete_users/{username}/")
 async def admin_delete_users(username , current_user: User = Depends(get_current_active_user)):
-    print ("admin_delete_users")
+
     if not current_user['is_admin']:
         return JSONResponse(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -222,7 +226,6 @@ async def admin_delete_users(username , current_user: User = Depends(get_current
     if sid:
         in_room = user.get('in_room')
         if in_room:
-            print ("user in_room", )
             room = user['room_number']
             await stop_time_back(room)
             opponent = await users_collection.find_one({"room_number" : room})
