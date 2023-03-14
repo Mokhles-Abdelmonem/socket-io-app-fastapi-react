@@ -161,12 +161,23 @@ async def read_own_items(current_user: User = Depends(get_current_active_user)):
 
 @app.post("/admin_update_users/{username}/")
 async def admin_update_users(username , updated_user: UpdatedUserJson, current_user: User = Depends(get_current_active_user)):
-    print ("admin_update_users")
+    
     if not current_user['is_admin']:
         return JSONResponse(
         status_code=status.HTTP_401_UNAUTHORIZED,
         content={"error": "UNAUTHORIZED to update users"},
     )
+    if updated_user.disabled:
+        print ("updated_user.disabled", updated_user.disabled)
+        user = await users_collection.find_one({"username" : username})
+        sid = user.get('sid')
+        if sid:
+            await sio_server.emit('logeUserOut', to=sid)
+        else:
+            await sio_server.emit('logeUserOutByName',username)   
+
+
+        
     users_collection.update_one({"username" : username}, {"$set" : {"level":updated_user.level, "disabled":updated_user.disabled}})
 
 
@@ -184,6 +195,12 @@ async def admin_update_users(username , current_user: User = Depends(get_current
         status_code=status.HTTP_401_UNAUTHORIZED,
         content={"error": "UNAUTHORIZED to delete users"},
     )
+    user = await users_collection.find_one({"username" : username})
+    sid = user.get('sid')
+    if sid:
+        await sio_server.emit('logeUserOut', to=sid) 
+    else:
+        await sio_server.emit('logeUserOutByName',username)   
     users_collection.delete_one({"username" : username})
 
 

@@ -26,6 +26,19 @@ export default function JoinButton() {
 
   const user = useSelector(state => state.auth.user);
   const dispatch = useDispatch();
+
+  useEffect(() => {
+
+    socket.on('logeUserOutByName',  (username)  => {
+      if (username === user.username){
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        window.location.reload();
+      }
+    });
+
+
+  }, []);
   function handleClick () {
 
     const callback = socket.emit('add_user', user, (res) => {   
@@ -41,10 +54,9 @@ export default function JoinButton() {
   };
 
 
-    if (user){
-      if (user.joined) { return <Redirect to="/dashboard" />}
-    }
-
+  if (user){
+    if (user.joined) { return <Redirect to="/dashboard" />}
+  }
 
 
   return (

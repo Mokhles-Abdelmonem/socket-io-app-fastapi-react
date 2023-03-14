@@ -65,6 +65,14 @@ export default function GeneralRoom({socket}) {
       return user
     });
     
+
+    socket.on('logeUserOut',  ()  => {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      window.location.reload();
+    });
+
+
     socket.on('playerJoined', (data) => {
       setMessages((prevMessages) => [...prevMessages, { ...data, type: 'join'}]);
         const playersList = data.players;

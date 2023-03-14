@@ -50,7 +50,7 @@ async def get_user(username: str):
 
 async def authenticate_user(username: str, password: str):
     user = await get_user(username)
-    if not user:
+    if not user or user['disabled']:
         return False
     verifyed = verify_password(password, user["hashed_password"])
     if not verifyed:
@@ -79,7 +79,7 @@ async def validate_user(username: str, email: str, password: str):
         return False
     # if not verify_password(password, user.hashed_password):
     #     return False
-    return {"username": username, "email": email, "hashed_password": get_password_hash(password)}
+    return {"username": username, "email": email, "hashed_password": get_password_hash(password), "disabled":False}
 
 
 

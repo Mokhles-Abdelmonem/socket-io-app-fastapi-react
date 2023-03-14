@@ -100,7 +100,7 @@ function Header() {
   const settingsLinks = (
     <>
     {
-    user.is_admin ? 
+    user.is_admin && !user.in_room ? 
     (
       <Button href="/admin" variant="outlined" size="small">
         Acount Settings
