@@ -138,9 +138,10 @@ async def countdown_disconnected_user(user):
                     await sio_server.emit('declareWinner', {'winner': opponent_name, 'roomNumber':opponent["room_number"]})
                     await sio_server.emit('noteOpponentWon', to=opponent['sid'])
                     await sio_server.emit('congrateWinner', opponent, to=opponent['sid'])
-            await sio_server.emit('setDisconnectedPlayer', username, to=opponent['sid'])
-            await sio_server.emit('notePlayerLeft', to=opponent['sid'])
-            await stop_time_back(player_room)
+            if opponent:
+                await sio_server.emit('setDisconnectedPlayer', username, to=opponent['sid'])
+                await sio_server.emit('notePlayerLeft', to=opponent['sid'])
+                await stop_time_back(player_room)
         player = await users_collection.find_one({"username":username})
         connected = player['connected']
 

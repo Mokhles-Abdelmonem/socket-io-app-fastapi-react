@@ -89,6 +89,12 @@ async def login_for_access_token(json_data: LoginJson, Authorize: AuthJWT = Depe
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    if user == "disabled":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="this account (Disabled) by admin",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     access_token = Authorize.create_access_token(subject=user['username'])
     refresh_token = Authorize.create_refresh_token(subject=user['username'])
     return {"access_token": access_token, "refresh_token": refresh_token}

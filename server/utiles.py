@@ -51,7 +51,7 @@ async def get_user(username: str):
 async def authenticate_user(username: str, password: str):
     user = await get_user(username)
     if not user or user['disabled']:
-        return False
+        return "disabled"
     verifyed = verify_password(password, user["hashed_password"])
     if not verifyed:
         return False
