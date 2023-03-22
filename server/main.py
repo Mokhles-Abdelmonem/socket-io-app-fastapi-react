@@ -179,6 +179,11 @@ async def admin_update_users(username , updated_user: UpdatedUserJson, current_u
         }
     if updated_user.disabled:
         user = await users_collection.find_one({"username" : username})
+        if not user:
+            return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"error": "no users found with this username"},
+        )
         sid = user.get('sid')
         if sid:
             in_room = user.get('in_room')
@@ -186,11 +191,9 @@ async def admin_update_users(username , updated_user: UpdatedUserJson, current_u
                 room = user['room_number']
                 await stop_time_back(room)
                 players_in_room = users_collection.find({"room_number" : room})
-                print ("players_in_room >>>>>>>>>>>>>>>>>>>", players_in_room)
                 async for player in players_in_room :
                     if player['username'] != username :
                         opponent = player 
-                print ("opponent >>>>>>>>>>>>>>>>>>>", opponent)
 
                 await sio_server.emit('logeUserOutFromRoom', opponent["username"], to=sid)
             else:
@@ -229,6 +232,11 @@ async def admin_delete_users(username , current_user: User = Depends(get_current
         content={"error": "UNAUTHORIZED to delete users"},
     )
     user = await users_collection.find_one({"username" : username})
+    if not user:
+        return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content={"error": "no users found with this username"},
+    )
     sid = user.get('sid')
     if sid:
         in_room = user.get('in_room')

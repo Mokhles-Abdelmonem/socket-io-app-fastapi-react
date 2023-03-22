@@ -38,10 +38,14 @@ def count_null(squares):
     return squares.count(None)
 
 
+def calculate_rps_winner(choise1, choise2):
+    if choise1 == 0 and choise2 == 2:
+        choise1 = 3        
+    if choise2 == 0 and choise1 == 2:
+        choise2 = 3
+    choises = [choise1, choise2]
+    print("max(choises) >>>>>>>>", max(choises))
+    print("(choises) >>>>>>>>", choises)
 
+    return choises.index(max(choises))
 
-
-
-if __name__ == '__main__':
-
-    print(calculate_winner(initial_squares))

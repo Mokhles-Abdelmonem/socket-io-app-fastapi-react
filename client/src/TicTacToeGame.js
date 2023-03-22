@@ -21,6 +21,7 @@ import {
 } from './api/types';
 import Board from './components/socket/Board';
 import Chat from './components/socket/Chat';
+import RPSBoard from './components/socket/RPSBoard';
 
 
 
@@ -47,6 +48,7 @@ export default function Game({socket}) {
   let browserHistory = useHistory();
 
   const [level, setLevel] = useState(0);
+  const [game, setGame] = useState(null);
 
   let username; 
   if(user === undefined || user === null || user.username === null || user.username === undefined){
@@ -108,9 +110,12 @@ export default function Game({socket}) {
   }
 }
 
-  const squares = currentSquares
   function handleClick(i) {
     socket.emit('handle_click', i, user, opponentName);
+  }
+
+  function handleRPSClick(i) {
+    socket.emit('handle_rps_click', i, user, opponentName);
   }
 
   function getUser (){
@@ -143,6 +148,10 @@ export default function Game({socket}) {
           setBoard(result);
         }
       });
+      socket.emit('get_game', user.room_number ,(result) => {
+          console.log("result of getting the game", result);
+          setGame(result);
+      });
       if (!user.in_room) {
         return <Redirect to="/dashboard" />
       }
@@ -159,8 +168,12 @@ export default function Game({socket}) {
     socket.on('setBoard', (res) => {
       setBoard(res);
     });
-
+    socket.on('refreshPlayer', () => {
+      console.log("refresh player state  from server ");
+      window.location.reload();
+    });
     socket.on('setTimer', (timer) => {
+      console.log ("timer >>>>" + timer);
       setTimer(timer);
     });
 
@@ -421,10 +434,18 @@ export default function Game({socket}) {
                 <Container maxWidth="sm">
                   <Box sx={{ minHeight: '50vh' }}>
                     <div className='game'>
-                      <Board
-                      squares={board}
-                      handleClick={handleClick}
-                      />
+                      {game && game === 0 ? (
+                        <Board
+                        squares={board}
+                        handleClick={handleClick}
+                        />
+                      ):(
+                        <RPSBoard
+                        squares={board}
+                        handleClick={handleRPSClick}
+                        />
+                      ) }
+
                     </div>
                   </Box>
 

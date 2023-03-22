@@ -72,6 +72,20 @@ export default function GeneralRoom({socket}) {
       window.location.reload();
     });
 
+    socket.on('cofirmAcceptedRPS',  ()  => {
+      localStorage.removeItem('hanging_request');
+      confirmAlert({
+        title: 'Accepted Rock Paper Scissor game request',
+        message: `your opponent has accepted the request`,
+        buttons: [
+          {
+            label: 'Ok',
+            onClick: () => {
+            }
+          }
+        ],
+      });
+    });
 
     socket.on('playerJoined', (data) => {
       setMessages((prevMessages) => [...prevMessages, { ...data, type: 'join'}]);
@@ -124,45 +138,85 @@ export default function GeneralRoom({socket}) {
 
     socket.on('gameRequest', (data) => {
       localStorage.setItem('hanging_response', data.player_x_name)
-      confirmAlert({
-        title: 'Confirm game request',
-        message: `${data.player_x_name} Requesting a game with role ${data.role} 
-        (role number) is the number of winning required to get next level`,
-        buttons: [
-          {
-            label: 'Yes',
-            onClick: () => {
-              localStorage.removeItem('hanging_response');
-              socket.emit('join_room', data.player_x_name, data.player_o_name, data.role, (result) => {
-                
-                const player_o = result[1];
-                setOpponentName(data.player_x_name);
-                dispatch({
-                  type: LOAD_USER_SUCCESS,
-                  payload: {user: player_o}
+      if (data.game_type === "TicTacToe"){
+        confirmAlert({
+          title: 'Confirm TicTacToe game request',
+          message: `${data.player_x_name} Requesting a TicTacToe game with role ${data.role} 
+          (role number) is the number of winning required to get next level`,
+          buttons: [
+            {
+              label: 'Yes',
+              onClick: () => {
+                localStorage.removeItem('hanging_response');
+                socket.emit('join_room', data.player_x_name, data.player_o_name, data.game_type, data.role, (result) => {
+                  
+                  const player_o = result[1];
+                  setOpponentName(data.player_x_name);
+                  dispatch({
+                    type: LOAD_USER_SUCCESS,
+                    payload: {user: player_o}
+                  });
+                  
                 });
-                
-              });
+              }
+            },
+            {
+              label: 'No',
+              onClick: () => {
+                localStorage.removeItem('hanging_response');
+                socket.emit('decline_request', data.player_x_name);
+              }
             }
+          ],
+          onClickOutside: () => {
+            localStorage.removeItem('hanging_response');
+            socket.emit('decline_request', data.player_x_name);
           },
-          {
-            label: 'No',
-            onClick: () => {
-              localStorage.removeItem('hanging_response');
-              socket.emit('decline_request', data.player_x_name);
+        });
+
+
+      }else if (data.game_type === "RPS"){
+
+
+        confirmAlert({
+          title: 'Confirm Rock Paper Scissor game request',
+          message: `${data.player_x_name} Requesting a Rock Paper Scissor game `,
+          buttons: [
+            {
+              label: 'Yes',
+              onClick: () => {
+                localStorage.removeItem('hanging_response');
+                socket.emit('join_room', data.player_x_name, data.player_o_name, data.game_type, data.role, (result) => {
+                  const player_o = result[1];
+                  setOpponentName(data.player_x_name);
+                  dispatch({
+                    type: LOAD_USER_SUCCESS,
+                    payload: {user: player_o}
+                  });
+                  
+                });
+              }
+            },
+            {
+              label: 'No',
+              onClick: () => {
+                localStorage.removeItem('hanging_response');
+                socket.emit('decline_request', data.player_x_name);
+              }
             }
-          }
-        ],
-        onClickOutside: () => {
-          localStorage.removeItem('hanging_response');
-          socket.emit('decline_request', data.player_x_name);
-        },
-      });
+          ],
+          onClickOutside: () => {
+            localStorage.removeItem('hanging_response');
+            socket.emit('decline_request', data.player_x_name);
+          },
+        });
+
+
+      }
     });
 
 
     socket.on('setPlayerToPlay', (data) => {
-      console.log("setPlayerToPlay called >>>>>>>>>>>>>>", data)
       localStorage.removeItem('hanging_request');
       const player_x = data.player
       const player_o = data.opponent
