@@ -41,6 +41,8 @@ export default function Game({socket}) {
   const currentSquares = history[currentMove];
   const [board, setBoard] = useState([Array(9).fill(null)]);
 
+  const [Clicked, setClicked] = useState(null);
+
 
   const user = useSelector(state => state.auth.user);
   const dispatch = useDispatch();
@@ -116,6 +118,7 @@ export default function Game({socket}) {
 
   function handleRPSClick(i) {
     socket.emit('handle_rps_click', i, user, opponentName);
+    setClicked(i);
   }
 
   function getUser (){
@@ -441,7 +444,7 @@ export default function Game({socket}) {
                         />
                       ):(
                         <RPSBoard
-                        squares={board}
+                        Clicked={Clicked}
                         handleClick={handleRPSClick}
                         />
                       ) }
