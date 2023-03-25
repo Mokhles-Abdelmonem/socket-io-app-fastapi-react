@@ -7,7 +7,6 @@ import CircleIcon from '@mui/icons-material/Circle';
 
 
 export default function RPSBoard({Clicked, handleClick}) {
-  console.log("Clicked on RPS board",Clicked)
     const clickedSquare = (Clicked) => {
       if (Clicked === 0) return <Square value={<CircleIcon sx={{fontSize:"50px"}}/>} /> 
       if (Clicked === 1) return <Square value={<ReceiptIcon sx={{fontSize:"50px"}}/>} /> 

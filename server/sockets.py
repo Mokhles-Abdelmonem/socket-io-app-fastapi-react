@@ -638,10 +638,12 @@ async def join_room(sid, playerx, playero, game_type ,role=3):
         player_x['side'] = 'X'
         player_o['side'] = 'O'
         history[str(room_number)] = [None for i in range(9)]
-        game_type_dict[str(room_number)] = 0
+        game = 0
+        game_type_dict[str(room_number)] = game
         await sio_server.emit('setPlayerToPlay', {"player":player_x, "opponent":player_o['username']} , to=player_x_sid)
     elif game_type == "RPS":
         timer_switch[str(room_number)] = [15,15,True,False]
+        game = 1
         game_type_dict[str(room_number)] = 1
         rps_game_dict[str(room_number)] = {}
         await sio_server.emit('cofirmAcceptedRPS', to=player_x_sid)

@@ -308,7 +308,6 @@ export default function GeneralRoom({socket}) {
   });
 
   socket.on('chat', (messages) => {
-    console.log(messages);
     setMessages(messages);
   });
 

@@ -119,7 +119,6 @@ export default function Game({socket}) {
   function handleRPSClick(i) {
     socket.emit('handle_rps_click', i, user, opponentName,(res)=>{
     if(res){
-      console.log("clicked", i);
       setClicked(i);
     } 
     });
@@ -176,16 +175,13 @@ export default function Game({socket}) {
       window.location.reload();
   
   });
-  
     socket.on('setBoard', (res) => {
       setBoard(res);
     });
     socket.on('refreshPlayer', () => {
-      console.log("refresh player state  from server ");
       window.location.reload();
     });
     socket.on('setTimer', (timer) => {
-      console.log ("timer >>>>" + timer);
       setTimer(timer);
     });
 
@@ -447,15 +443,15 @@ export default function Game({socket}) {
                 <Container maxWidth="sm">
                   <Box sx={{ minHeight: '50vh' }}>
                     <div className='game'>
-                      {game && game === 0 ? (
-                        <Board
-                        squares={board}
-                        handleClick={handleClick}
-                        />
-                      ):(
+                      {game === 1 ? (
                         <RPSBoard
                         Clicked={Clicked}
                         handleClick={handleRPSClick}
+                        />
+                      ):(
+                        <Board
+                        squares={board}
+                        handleClick={handleClick}
                         />
                       ) }
 
