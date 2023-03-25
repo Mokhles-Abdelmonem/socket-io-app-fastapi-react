@@ -81,9 +81,13 @@ export default function GeneralRoom({socket}) {
           {
             label: 'Ok',
             onClick: () => {
+              window.location.reload();
             }
           }
         ],
+        onClickOutside: () => {
+          window.location.reload();
+        },
       });
     });
 

@@ -108,7 +108,7 @@ export default function Game({socket}) {
 
   const handelRemach  = () => {
     if (user) {
-      socket.emit('rematch_game', username, opponentName);
+      socket.emit('rematch_game', username, opponentName, game);
   }
 }
 
@@ -117,8 +117,12 @@ export default function Game({socket}) {
   }
 
   function handleRPSClick(i) {
-    socket.emit('handle_rps_click', i, user, opponentName);
-    setClicked(i);
+    socket.emit('handle_rps_click', i, user, opponentName,(res)=>{
+    if(res){
+      console.log("clicked", i);
+      setClicked(i);
+    } 
+    });
   }
 
   function getUser (){
@@ -153,9 +157,7 @@ export default function Game({socket}) {
       });
 
       socket.emit('get_player_rps_choice', user.username ,(result) => {
-        if (result){
-          setClicked(true);
-        }
+        setClicked(result);
       });
 
       socket.emit('get_game', user.room_number ,(result) => {
@@ -204,6 +206,7 @@ export default function Game({socket}) {
       setCurrentMove(0);
       setHistory([Array(9).fill(null)]);
       setBoard([Array(9).fill(null)]);
+      setClicked(null);
       if(user){
         socket.emit('get_user_level', username ,(level) => {
           if (level){

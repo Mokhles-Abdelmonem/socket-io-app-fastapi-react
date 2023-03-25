@@ -39,6 +39,8 @@ def count_null(squares):
 
 
 def calculate_rps_winner(choise1, choise2):
+    if choise1 == choise2:
+        return 'draw'
     if choise1 == 0 and choise2 == 2:
         choise1 = 3        
     if choise2 == 0 and choise1 == 2:

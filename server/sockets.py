@@ -155,42 +155,43 @@ async def countdown_rps_game(player_name, room, opponent_name):
     global rps_game_dict
     global players
     global names_list
+    global timer_switch
     g_time = 15
     player_still = True
     game_res = rps_game_dict.get(room)
     player_still = len(game_res.keys()) < 2
+    timer_switch[room][3] = False
     player_won = False
     while g_time >= 0 and player_still and not player_won:
         await sio_server.sleep(1)
         mins, secs = divmod(g_time, 60)
         timer = '{:02d}:{:02d}'.format(mins, secs)
+        name_index = names_list.index(player_name)
+        player = players[name_index]
+        opponent_index = names_list.index(opponent_name)
+        opponent = players[opponent_index]
         await sio_server.emit('setTimer', timer, to=room)
+        player_won = timer_switch[room][3]
         g_time -= 1
         if g_time == -1:
+            game_res = rps_game_dict.get(room)
             if game_res :
                 player_choise = game_res.get(player_name)
+                print("player_choise >>>>>>>>>>", player_choise)
                 opponent_choise = game_res.get(opponent_name)
-                if not player_choise or not opponent_choise :
-                    declare_draw_back(room)
-                elif player_choise :
-                    name_index = names_list.index(player_name)
-                    player = players[name_index]
+                print("opponent_choise >>>>>>>", opponent_choise)
+                if player_choise == None and opponent_choise == None:
+                    await declare_draw_back(room)
+                    timer_switch[room][3] = True
+                elif player_choise or player_choise == 0 :
                     await declare_winner_back(player['sid'], player, opponent_name)
-                elif opponent_choise :
-                    name_index = names_list.index(opponent_name)
-                    player = players[name_index]
-                    await declare_winner_back(player['sid'], player, opponent_name)
+                elif opponent_choise or opponent_choise == 0:
+                    await declare_winner_back(opponent['sid'], opponent, player_name)
                 await sio_server.emit('TimeOut', to=room)
                 await stop_time_back(room)
             else:
                 await declare_draw_back(room)
-
-
-
-
-
-
-
+                timer_switch[room][3] = True
 
 
 @sio_server.event
@@ -289,7 +290,7 @@ async def get_player_rps_choice(sid, username):
     res_game = rps_game_dict.get(room)
     if res_game:
         player_choice = res_game.get(username)
-        if player_choice :
+        if player_choice or player_choice == 0 :
             return player_choice
     return None
             
@@ -397,22 +398,30 @@ async def handle_click(sid, i , player, opponent_name):
 @sio_server.event
 async def handle_rps_click(sid, i , player, opponent_name):
     global rps_game_dict
+    global timer_switch
+    
+
     res_game = rps_game_dict.get(player["room_number"])
     opponent_choice = res_game.get(opponent_name)
     player_choice = res_game.get(player["username"])
-    if player_choice :
-        return
-    print("opponent_choice", opponent_choice)
-    print("player choice", i)
+    player_won = timer_switch[player['room_number']][3]
+    print("player_won >>>>>>>>>" , player_won)
+    if player_choice or player_choice == 0 or player_won:
+        return False
     if opponent_choice or opponent_choice == 0:
         winner = calculate_rps_winner(i , opponent_choice)
+        if winner == 'draw':
+            await stop_time_back(player['room_number'])
+            await declare_draw_back(player['room_number'])
         if winner == 0:
-            print("winner is player >>>>>>>>>>>" , player['username'])
+            await stop_time_back(player['room_number'])
+            await declare_winner_back(player['sid'], player, opponent_name)
         if winner == 1:
-            print("winner is opponnet >>>>>>>>>>>" , opponent_name)
-    else:
-        pass
+            await stop_time_back(player['room_number'])
+            await declare_winner_back(player['sid'], opponent_name, player['username'])
     res_game[player['username']] = i
+    return True
+
 
 
 
@@ -600,6 +609,7 @@ async def join_room(sid, playerx, playero, game_type ,role=3):
     global role_dict
     global history
     global game_type_dict
+    global timer_switch
 
     player_x_index = names_list.index(playerx)
     player_o_index = names_list.index(playero)
@@ -623,15 +633,15 @@ async def join_room(sid, playerx, playero, game_type ,role=3):
     player_o['room_number'] = str(room_number)
 
     player_x_sid = player_x['sid']
-    print("game_type >>>>>>>>>>>>", game_type)
+    role_dict[str(room_number)] = role  
     if game_type == "TicTacToe":
         player_x['side'] = 'X'
         player_o['side'] = 'O'
         history[str(room_number)] = [None for i in range(9)]
         game_type_dict[str(room_number)] = 0
-        role_dict[str(room_number)] = role  
         await sio_server.emit('setPlayerToPlay', {"player":player_x, "opponent":player_o['username']} , to=player_x_sid)
     elif game_type == "RPS":
+        timer_switch[str(room_number)] = [15,15,True,False]
         game_type_dict[str(room_number)] = 1
         rps_game_dict[str(room_number)] = {}
         await sio_server.emit('cofirmAcceptedRPS', to=player_x_sid)
@@ -942,7 +952,7 @@ async def set_player_draw(sid, username):
 
 
 @sio_server.event
-async def rematch_game(sid, player_name, opponent_name):
+async def rematch_game(sid, player_name, opponent_name, game):
     global players
     global names_list
     global timer_switch
@@ -965,7 +975,10 @@ async def rematch_game(sid, player_name, opponent_name):
     room_history = history.get(room)
     if room_history:
         history.update({room: list(None for _ in range(9))})
-
-    sio_server.start_background_task(countdown_x, player_name, room, opponent_name, player['side'])
-
+    if game == 0:
+        sio_server.start_background_task(countdown_x, player_name, room, opponent_name, player['side'])
+    if game == 1:
+        global rps_game_dict
+        rps_game_dict[room] = {}
+        sio_server.start_background_task(countdown_rps_game, player_name, str(room_number), opponent_name )
     await sio_server.emit('rematchGame', to=room)
