@@ -74,9 +74,12 @@ class UpdatedUserJson(BaseModel):
     disabled: bool | None = None
 
 
-
-class RoleJson(BaseModel):
+class BaseRoleJson(BaseModel):
     """
     """
     winning_number: int = Field(ge=1)
+
+class RoleJson(BaseRoleJson):
+    """
+    """
     roles: list[list[int]] 

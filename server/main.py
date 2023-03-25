@@ -15,7 +15,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
-from serializer import RegisterJson, LoginJson, MessageJson, RoleJson, UpdatedUserJson
+from serializer import RegisterJson, LoginJson, MessageJson, RoleJson, UpdatedUserJson, BaseRoleJson
 import re
 from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import AuthJWTException
@@ -300,6 +300,23 @@ async def set_role(role: RoleJson):
     role_collection.insert_one({"winning_number": role.winning_number, "roles": role.roles})
     return role
 
+@app.post("/roles")
+async def set_rps_role(role: BaseRoleJson):
+    roles = await role_collection.find_one({"winning_number": role.winning_number})
+    if roles:
+        return JSONResponse(
+        status_code=409,
+        content={"role": f"role already exist"},
+    )
+    for role_list in role.roles:
+        for number in role_list:
+            if type(number) != int or number not in range(9):
+                return JSONResponse(
+                status_code=501,
+                content={"role": "Invalid role all roles must be integers and in range 0-8"},
+                )  
+    role_collection.insert_one({"winning_number": role.winning_number, "roles": role.roles})
+    return role
 
 
 

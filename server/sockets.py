@@ -276,7 +276,24 @@ async def get_board(sid, localName):
         room = player['room_number']
         room_history = history.get(room)
         return room_history
+
+
+@sio_server.event
+async def get_player_rps_choice(sid, username):
+    global rps_game_dict
+    global players
+    global names_list
+    name_index = names_list.index(username)
+    player = players[name_index]
+    room = player['room_number']
+    res_game = rps_game_dict.get(room)
+    if res_game:
+        player_choice = res_game.get(username)
+        if player_choice :
+            return player_choice
+    return None
             
+
 @sio_server.event
 async def get_game(sid, room):
     global game_type_dict
@@ -382,6 +399,9 @@ async def handle_rps_click(sid, i , player, opponent_name):
     global rps_game_dict
     res_game = rps_game_dict.get(player["room_number"])
     opponent_choice = res_game.get(opponent_name)
+    player_choice = res_game.get(player["username"])
+    if player_choice :
+        return
     print("opponent_choice", opponent_choice)
     print("player choice", i)
     if opponent_choice or opponent_choice == 0:
@@ -391,7 +411,8 @@ async def handle_rps_click(sid, i , player, opponent_name):
         if winner == 1:
             print("winner is opponnet >>>>>>>>>>>" , opponent_name)
     else:
-        res_game[player['username']] = i
+        pass
+    res_game[player['username']] = i
 
 
 

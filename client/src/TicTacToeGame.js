@@ -151,6 +151,13 @@ export default function Game({socket}) {
           setBoard(result);
         }
       });
+
+      socket.emit('get_player_rps_choice', user.username ,(result) => {
+        if (result){
+          setClicked(true);
+        }
+      });
+
       socket.emit('get_game', user.room_number ,(result) => {
           console.log("result of getting the game", result);
           setGame(result);
